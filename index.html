@@ -1,198 +1,275 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grano — Gestão Financeira</title>
+<title>Grano — Gestão Financeira Inteligente</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
 :root{
-  --blue:#1B3A6B;--blue2:#15305A;--blue3:#243B6E;
-  --blue-l:#EEF2FF;--blue-m:#5C7ACA;--blue-xl:#F5F7FF;
+  --blue:#1B3A6B;--blue2:#15305A;--blue3:#243B6E;--blue-l:#EEF2FF;--blue-m:#5C7ACA;--blue-xl:#F5F7FF;
   --green:#00B87A;--green2:#009965;--green-l:#E6F7F2;
   --red:#E03131;--red-l:#FFF0F0;
   --amber:#D97706;--amber-l:#FFFBEB;
+  --purple:#7C3AED;--purple-l:#F5F3FF;
   --bg:#F4F5F9;--card:#FFFFFF;
-  --ink:#111827;--ink2:#374151;--ink3:#6B7280;--ink4:#9CA3AF;--ink5:#E5E7EB;
-  --shadow:0 1px 3px rgba(0,0,0,0.07),0 4px 12px rgba(0,0,0,0.04);
+  --ink:#111827;--ink2:#374151;--ink3:#6B7280;--ink4:#9CA3AF;--ink5:#E5E7EB;--ink6:#F9FAFB;
   --r:8px;--r2:12px;--r3:16px;
+  --sidebar:224px;
 }
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);height:100vh;overflow:hidden}
-.screen{display:none;height:100vh}
-.screen.active{display:flex}
+[data-theme="dark"]{
+  --bg:#0F1117;--card:#1A1D27;
+  --ink:#F0F1F3;--ink2:#C5C8D0;--ink3:#8B8FA8;--ink4:#555870;--ink5:#2A2D3E;--ink6:#141720;
+  --blue-l:#1E2A4A;--blue-xl:#161C33;--green-l:#0D2B22;--red-l:#2B1414;--amber-l:#2B2010;--purple-l:#1E1533;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);height:100vh;overflow:hidden;transition:background 0.3s,color 0.3s}
+
+/* ══ SPLASH ══ */
+#splash{position:fixed;inset:0;background:var(--blue);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;transition:opacity 0.5s,transform 0.5s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-logo{display:flex;align-items:center;gap:14px;animation:splashIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards}
+@keyframes splashIn{from{opacity:0;transform:scale(0.7) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.splash-mark{width:56px;height:56px;background:var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff}
+.splash-name{font-size:36px;font-weight:800;color:#fff;letter-spacing:-1px}
+.splash-name span{color:var(--green)}
+.splash-sub{font-size:13px;color:rgba(255,255,255,0.45);margin-top:12px;letter-spacing:0.05em;animation:fadeIn 0.8s 0.3s both}
+.splash-bar{width:200px;height:2px;background:rgba(255,255,255,0.15);border-radius:2px;margin-top:32px;overflow:hidden;animation:fadeIn 0.5s 0.4s both}
+.splash-bar-fill{height:100%;background:var(--green);border-radius:2px;animation:splashLoad 1.2s 0.5s cubic-bezier(0.4,0,0.2,1) forwards;width:0%}
+@keyframes splashLoad{to{width:100%}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ SCREENS ══ */
+.screen{display:none;height:100vh;opacity:0;transition:opacity 0.35s}
+.screen.active{display:flex;animation:screenIn 0.4s cubic-bezier(0.4,0,0.2,1) forwards}
+@keyframes screenIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ TOASTS ══ */
+#toast-container{position:fixed;top:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--ink5);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);font-size:13px;font-weight:500;color:var(--ink);min-width:260px;max-width:340px;pointer-events:all;animation:toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+.toast.out{animation:toastOut 0.3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+.toast-icon{font-size:16px;flex-shrink:0}
+.toast-bar{position:absolute;bottom:0;left:0;height:2px;border-radius:0 0 10px 10px;animation:toastBar 3s linear forwards}
+@keyframes toastBar{from{width:100%}to{width:0%}}
+.toast.success .toast-bar{background:var(--green)}
+.toast.error .toast-bar{background:var(--red)}
+.toast.info .toast-bar{background:var(--blue)}
+.toast{position:relative;overflow:hidden}
 
 /* ══ LOGIN ══ */
-#login{
-  align-items:center;justify-content:center;flex-direction:column;
-  background:linear-gradient(135deg,#0f1f3d 0%,#1B3A6B 60%,#1a4a5e 100%);
-  padding:24px;
-}
-.login-card{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+#login{align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#0a1628 0%,#1B3A6B 55%,#1a4558 100%);padding:24px}
+#login::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(0,184,122,0.08) 0%,transparent 60%)}
+.login-card{background:var(--card);border-radius:20px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,0.35);animation:cardIn 0.5s 0.2s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .login-logo{width:54px;height:54px;background:var(--blue);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:24px;font-weight:800;color:#fff}
-.login-title{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;margin-bottom:6px}
+.login-title{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;margin-bottom:6px;text-align:center}
 .login-title span{color:var(--green)}
-.login-sub{font-size:14px;color:var(--ink3);margin-bottom:28px;line-height:1.6}
-.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1.5px solid var(--ink5);border-radius:10px;padding:13px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all 0.2s;margin-bottom:10px}
-.google-btn:hover{border-color:var(--blue);background:var(--blue-xl)}
+.login-sub{font-size:13px;color:var(--ink3);margin-bottom:28px;line-height:1.6;text-align:center}
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--card);border:1.5px solid var(--ink5);border-radius:10px;padding:13px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all 0.2s;margin-bottom:10px}
+.google-btn:hover{border-color:var(--blue);background:var(--blue-xl);transform:translateY(-1px)}
+.google-btn:active{transform:scale(0.98)}
 .demo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--blue-xl);border:1.5px solid var(--blue-l);border-radius:10px;padding:13px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--blue);cursor:pointer;transition:all 0.2s;margin-bottom:20px}
-.demo-btn:hover{background:var(--blue-l)}
-.login-features{display:flex;flex-direction:column;gap:8px;background:var(--bg);border-radius:10px;padding:14px}
+.demo-btn:hover{background:var(--blue-l);transform:translateY(-1px)}
+.login-feats{background:var(--bg);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
 .login-feat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)}
-.login-status{font-size:12px;color:var(--ink4);margin-top:12px;min-height:18px}
+.login-status{font-size:12px;color:var(--ink4);margin-top:12px;text-align:center;min-height:18px}
 
 /* ══ APP ══ */
 #app{flex-direction:row}
-.sidebar{width:220px;min-width:220px;background:var(--blue);display:flex;flex-direction:column;height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--blue);display:flex;flex-direction:column;height:100vh;transition:transform 0.3s}
 .sb-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px}
-.sb-logo-mark{width:30px;height:30px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
-.sb-logo-text{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px}
-.sb-logo-text small{display:block;font-size:9px;color:rgba(255,255,255,0.35);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;margin-top:1px}
+.sb-mark{width:30px;height:30px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.sb-name{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px}
+.sb-name small{display:block;font-size:9px;color:rgba(255,255,255,0.35);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;margin-top:1px}
 .sb-sec{padding:12px 12px 4px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.12em;text-transform:uppercase}
-.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;margin:1px 6px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:rgba(255,255,255,0.55);transition:all 0.15s;border:none;background:none;width:calc(100% - 12px);text-align:left;font-family:'Outfit',sans-serif}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;margin:1px 6px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:rgba(255,255,255,0.55);transition:all 0.15s;border:none;background:none;width:calc(100% - 12px);text-align:left;font-family:'Outfit',sans-serif;position:relative}
 .sb-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9)}
 .sb-item.active{background:rgba(255,255,255,0.13);color:#fff;font-weight:600}
 .sb-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;opacity:0.7}
 .sb-item.active .sb-icon{opacity:1}
+.sb-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;min-width:18px;text-align:center}
 .sb-footer{margin-top:auto;padding:10px;border-top:1px solid rgba(255,255,255,0.08)}
-.sb-demo-badge{background:rgba(0,184,122,0.15);border:1px solid rgba(0,184,122,0.25);border-radius:7px;padding:9px 11px;margin-bottom:8px;font-size:11px;color:rgba(255,255,255,0.65);line-height:1.5}
-.sb-demo-badge a{color:var(--green);cursor:pointer;font-weight:600}
+.sb-demo{background:rgba(0,184,122,0.15);border:1px solid rgba(0,184,122,0.25);border-radius:7px;padding:9px 11px;margin-bottom:8px;font-size:11px;color:rgba(255,255,255,0.65);line-height:1.5}
+.sb-demo a{color:var(--green);cursor:pointer;font-weight:600}
 .sb-user{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;cursor:pointer;transition:background 0.15s}
 .sb-user:hover{background:rgba(255,255,255,0.08)}
-.sb-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
-.sb-avatar img{width:100%;height:100%;object-fit:cover}
+.sb-av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.sb-av img{width:100%;height:100%;object-fit:cover}
 .sb-uname{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-uaction{font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px}
+.sb-uact{font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px}
 
+/* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
-.topbar{height:52px;min-height:52px;background:var(--card);border-bottom:1px solid var(--ink5);display:flex;align-items:center;padding:0 20px;gap:12px}
-.topbar-title{font-size:14px;font-weight:700;color:var(--ink);flex:1}
-.month-nav{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid #D1D5DB;border-radius:var(--r);padding:5px 10px;font-size:12px;font-weight:500;color:var(--ink2)}
-.month-nav button{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:16px;line-height:1;padding:0 2px}
-.month-nav button:hover{color:var(--ink)}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;min-height:52px;background:var(--card);border-bottom:1px solid var(--ink5);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:30}
+.tb-title{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+.month-ctrl{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--ink5);border-radius:var(--r);padding:5px 10px;font-size:12px;font-weight:500;color:var(--ink2)}
+.month-ctrl button{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:16px;line-height:1;padding:0 2px;transition:color 0.15s}
+.month-ctrl button:hover{color:var(--ink)}
+.tb-search{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--ink5);border-radius:var(--r);padding:5px 12px;font-size:12px;color:var(--ink3);cursor:pointer;transition:all 0.2s;min-width:140px}
+.tb-search:hover{border-color:var(--blue-m)}
+.tb-search input{background:none;border:none;outline:none;font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink);width:100%}
+.tb-search input::placeholder{color:var(--ink4)}
 .tb-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
-.tb-sec{background:var(--bg);color:var(--ink2);border:1px solid #D1D5DB}
+.tb-btn:active{transform:scale(0.97)}
+.tb-sec{background:var(--bg);color:var(--ink2);border:1px solid var(--ink5)}
 .tb-sec:hover{background:var(--ink5)}
 .tb-green{background:var(--green);color:#fff}
 .tb-green:hover{background:var(--green2)}
+.tb-icon{background:none;border:none;width:34px;height:34px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background 0.15s;color:var(--ink3)}
+.tb-icon:hover{background:var(--bg);color:var(--ink)}
 
-.content{flex:1;overflow-y:auto;padding:20px}
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}
 .content::-webkit-scrollbar{width:4px}
-.content::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
-.page{display:none}
+.content::-webkit-scrollbar-thumb{background:var(--ink5);border-radius:4px}
+.page{display:none;animation:pageIn 0.3s ease}
 .page.active{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* ══ COMPONENTS ══ */
-.card{background:var(--card);border:1px solid var(--ink5);border-radius:var(--r2);box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+/* ══ CARD SYSTEM ══ */
+.card{background:var(--card);border:1px solid var(--ink5);border-radius:var(--r2);box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:background 0.3s,border-color 0.3s}
 .ch{padding:14px 18px;border-bottom:1px solid var(--ink5);display:flex;align-items:center;justify-content:space-between}
 .ct{font-size:13px;font-weight:700;color:var(--ink)}
 .cs{font-size:11px;color:var(--ink4);margin-top:1px}
-.cl{font-size:11px;font-weight:500;color:var(--blue-m);background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif}
+.cl{font-size:11px;font-weight:500;color:var(--blue-m);background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;transition:color 0.15s}
 .cl:hover{color:var(--blue)}
 .cb{padding:18px}
 .cbsm{padding:6px 18px}
 
+/* ══ KPI GRID ══ */
 .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.kpi{background:var(--card);border:1px solid var(--ink5);border-radius:var(--r2);padding:18px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.kpi{background:var(--card);border:1px solid var(--ink5);border-radius:var(--r2);padding:18px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:all 0.2s;cursor:default}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.kpi::after{content:'';position:absolute;right:-16px;top:-16px;width:80px;height:80px;border-radius:50%;opacity:0.06}
+.kpi.red::after{background:var(--red)}
+.kpi.blue::after{background:var(--blue)}
+.kpi.green::after{background:var(--green)}
+.kpi.amber::after{background:var(--amber)}
 .kl{font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:7px}
-.kv{font-size:24px;font-weight:800;color:var(--ink);line-height:1;margin-bottom:5px}
-.kv.red{color:var(--red)}.kv.blue{color:var(--blue)}.kv.green{color:var(--green)}
-.ks{font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.kv{font-size:24px;font-weight:800;color:var(--ink);line-height:1;margin-bottom:5px;transition:color 0.3s}
+.kv.red{color:var(--red)}.kv.blue{color:var(--blue)}.kv.green{color:var(--green)}.kv.amber{color:var(--amber)}
+.ks{font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .badge{display:inline-flex;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
-.b-red{background:var(--red-l);color:var(--red)}
-.b-green{background:var(--green-l);color:var(--green2)}
-.b-blue{background:var(--blue-l);color:var(--blue-m)}
-.b-amber{background:var(--amber-l);color:var(--amber)}
+.b-red{background:var(--red-l);color:var(--red)}.b-green{background:var(--green-l);color:var(--green2)}
+.b-blue{background:var(--blue-l);color:var(--blue-m)}.b-amber{background:var(--amber-l);color:var(--amber)}
+.b-purple{background:var(--purple-l);color:var(--purple)}
 
+/* ══ LAYOUTS ══ */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
 .g3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.g3r{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:20px}
+.g3b{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
 
+/* ══ INSIGHT BANNER ══ */
 .ib{background:linear-gradient(135deg,var(--blue),var(--blue3));border-radius:var(--r2);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px;overflow:hidden;position:relative}
 .ib::after{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04)}
 .ib-tag{font-size:9px;font-weight:700;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px}
 .ib-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:2px;line-height:1.3}
 .ib-det{font-size:12px;color:rgba(255,255,255,0.6)}
 
-.ai{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--ink5)}
+/* ══ ALERTS ══ */
+.ai{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--ink5);transition:background 0.15s;cursor:default}
 .ai:last-child{border-bottom:none}
+.ai:hover{background:var(--ink6)}
 .ad{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
 .at{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:1px}
 .ax{font-size:11px;color:var(--ink3);line-height:1.45}
 
-.ci{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ink5)}
+/* ══ CATEGORIES ══ */
+.ci{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ink5);cursor:pointer;transition:background 0.1s}
 .ci:last-child{border-bottom:none}
-.cico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ci:hover{background:var(--ink6);margin:0 -18px;padding:10px 18px}
+.cico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:transform 0.2s}
+.ci:hover .cico{transform:scale(1.1)}
 .cn{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px}
 .bw{height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
 .bf{height:100%;background:var(--blue);border-radius:2px;transition:width 0.9s cubic-bezier(0.4,0,0.2,1)}
 .cv{font-size:12px;font-weight:700;color:var(--ink);text-align:right}
-.cp{font-size:10px;color:var(--ink4);text-align:right;margin-top:1px}
+.cpct{font-size:10px;color:var(--ink4);text-align:right;margin-top:1px}
 
+/* ══ PROJECTION ══ */
 .pr{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
-.pl{font-size:10px;color:var(--ink3);margin-bottom:3px}
+.pl{font-size:10px;color:var(--ink3);margin-bottom:3px;font-weight:500}
 .pv{font-size:19px;font-weight:800;color:var(--ink)}
 .pv.danger{color:var(--red)}
 .pt{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:6px}
 .pf{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--amber));transition:width 1.1s cubic-bezier(0.4,0,0.2,1)}
 
+/* ══ TX TABLE ══ */
 .txt{width:100%;border-collapse:collapse}
-.txt th{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;padding:9px 14px;text-align:left;background:var(--bg);border-bottom:1px solid var(--ink5)}
-.txt td{padding:11px 14px;border-bottom:1px solid var(--ink5);font-size:12px}
+.txt th{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;padding:9px 14px;text-align:left;background:var(--ink6);border-bottom:1px solid var(--ink5)}
+.txt td{padding:11px 14px;border-bottom:1px solid var(--ink5);font-size:12px;transition:background 0.1s}
 .txt tr:last-child td{border-bottom:none}
-.txt tr:hover td{background:#FAFBFC}
+.txt tr:hover td{background:var(--ink6)}
 .txn{font-weight:600;color:var(--ink)}
 .txa{font-weight:700;color:var(--red);text-align:right}
 .txd{color:var(--ink3)}
 
+/* ══ SCORE RING ══ */
 .sring{position:relative;width:110px;height:110px}
 .sring svg{width:110px;height:110px;transform:rotate(-90deg)}
 .srt{fill:none;stroke:var(--bg);stroke-width:7}
-.srf{fill:none;stroke:var(--blue);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1)}
+.srf{fill:none;stroke:var(--blue);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)}
 .src{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-.pi{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--ink5)}
+/* ══ PATTERNS ══ */
+.pi{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--ink5);transition:background 0.15s}
 .pi:last-child{border-bottom:none}
+.pi:hover{background:var(--ink6)}
 .pl2{width:3px;min-height:36px;border-radius:2px;flex-shrink:0;margin-top:1px}
 .pt2{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:2px}
 .pd{font-size:11px;color:var(--ink3);line-height:1.45}
 
-.mi{padding:13px 16px;border-bottom:1px solid var(--ink5)}
+/* ══ GOALS ══ */
+.mi{padding:13px 16px;border-bottom:1px solid var(--ink5);transition:background 0.15s}
 .mi:last-child{border-bottom:none}
-.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
-.mn{font-size:12px;font-weight:600;color:var(--ink)}
-.mp{font-size:12px;font-weight:700}
-.mt{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
-.mf{height:100%;border-radius:3px;transition:width 0.9s}
+.mi:hover{background:var(--ink6)}
+.mih{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.min{font-size:12px;font-weight:600;color:var(--ink)}
+.mip{font-size:12px;font-weight:700}
+.mit{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.mif{height:100%;border-radius:3px;transition:width 0.9s}
 
-.fi{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--ink5)}
-.fi:last-child{border-bottom:none}
+/* ══ CHART ══ */
+.cbars{display:flex;align-items:flex-end;gap:6px;height:110px;padding:0 2px;margin-bottom:8px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
+.bb{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:all 0.3s;position:relative}
+.bb.n{background:var(--blue-l);border:1px solid #C8D8F8}
+.bb.h{background:rgba(224,49,49,0.18);border:1px solid rgba(224,49,49,0.25)}
+.bc:hover .bb{opacity:0.75;transform:scaleY(1.04);transform-origin:bottom}
+.bday{font-size:9px;color:var(--ink4);text-align:center}
 
-.cb-bars{display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 2px;margin-bottom:8px}
-.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
-.bb{width:100%;border-radius:4px 4px 0 0;min-height:4px}
-.bn{background:var(--blue-l);border:1px solid #C8D8F8}
-.bh{background:rgba(224,49,49,0.18);border:1px solid rgba(224,49,49,0.25)}
-.bd{font-size:9px;color:var(--ink4)}
-
-.modal-bg{position:fixed;inset:0;background:rgba(17,24,39,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-bg.open{display:flex}
-.modal{background:var(--card);border-radius:var(--r3);width:480px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+/* ══ MODAL ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.modal-bg.open{display:flex;animation:modalBgIn 0.25s ease}
+@keyframes modalBgIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--card);border-radius:var(--r3);width:520px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes modalIn{from{opacity:0;transform:scale(0.93) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .mh2{padding:18px 22px;border-bottom:1px solid var(--ink5);display:flex;align-items:center;justify-content:space-between}
 .mt2{font-size:15px;font-weight:700;color:var(--ink)}
-.mc{background:none;border:none;font-size:20px;color:var(--ink4);cursor:pointer;line-height:1}
-.mc:hover{color:var(--ink)}
-.mb{padding:20px 22px}
+.mc{background:none;border:none;font-size:20px;color:var(--ink4);cursor:pointer;line-height:1;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.mc:hover{background:var(--bg);color:var(--ink)}
+.mb2{padding:20px 22px}
 .mf2{padding:14px 22px;border-top:1px solid var(--ink5);display:flex;gap:8px;justify-content:flex-end}
-.uz{border:1.5px dashed #D1D5DB;border-radius:var(--r2);padding:26px;text-align:center;margin-bottom:14px;background:var(--bg)}
-.pa{width:100%;background:var(--bg);border:1px solid #D1D5DB;border-radius:var(--r);padding:11px 13px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink);outline:none;resize:none;min-height:100px;line-height:1.65;transition:border-color 0.2s}
+.uz{border:1.5px dashed var(--ink5);border-radius:var(--r2);padding:26px;text-align:center;margin-bottom:14px;background:var(--bg);cursor:pointer;transition:all 0.2s}
+.uz:hover{border-color:var(--blue);background:var(--blue-xl)}
+.pa{width:100%;background:var(--bg);border:1px solid var(--ink5);border-radius:var(--r);padding:11px 13px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink);outline:none;resize:none;min-height:100px;line-height:1.65;transition:border-color 0.2s}
 .pa::placeholder{color:var(--ink4)}
 .pa:focus{border-color:var(--blue);background:var(--card)}
 .dv{display:flex;align-items:center;gap:10px;color:var(--ink4);font-size:11px;margin:12px 0}
 .dv::before,.dv::after{content:'';flex:1;height:1px;background:var(--ink5)}
 .mbtn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+.mbtn:active{transform:scale(0.97)}
 
+/* ══ LOADING ══ */
 .loading{position:fixed;inset:0;background:var(--card);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center}
-.loading.show{display:flex}
+.loading.show{display:flex;animation:fadeIn 0.2s ease}
 .ll{display:flex;align-items:center;gap:10px;margin-bottom:28px}
 .llm{width:38px;height:38px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff}
 .llt{font-size:22px;font-weight:800;color:var(--ink)}
@@ -201,18 +278,129 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
 .lb{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:2px;width:0%;transition:width 0.5s}
 .llabel{font-size:12px;color:var(--ink3);margin-bottom:20px;min-height:18px}
 .lsteps{display:flex;flex-direction:column;gap:7px;width:240px}
-.lstep{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink4);transition:color 0.3s}
+.lstep{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink4);transition:all 0.3s}
 .lstep.done{color:var(--ink2);font-weight:500}
-.lstep::before{content:'';width:6px;height:6px;border-radius:50%;background:#D1D5DB;flex-shrink:0;transition:background 0.3s}
+.lstep::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink5);flex-shrink:0;transition:background 0.3s}
 .lstep.done::before{background:var(--green)}
 
+/* ══ CHAT ══ */
+.chat-wrap{display:flex;flex-direction:column;height:460px}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--ink5);border-radius:3px}
+.msg{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55;animation:msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.msg.user{background:var(--blue);color:#fff;border-radius:12px 12px 2px 12px;align-self:flex-end}
+.msg.ai{background:var(--ink6);color:var(--ink);border-radius:12px 12px 12px 2px;align-self:flex-start;border:1px solid var(--ink5)}
+.msg.ai .msg-tag{font-size:9px;font-weight:700;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px}
+.chat-input-wrap{padding:12px 16px;border-top:1px solid var(--ink5);display:flex;gap:8px}
+.chat-input{flex:1;background:var(--bg);border:1px solid var(--ink5);border-radius:8px;padding:10px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ink);outline:none;resize:none;min-height:40px;max-height:80px;line-height:1.5;transition:border-color 0.2s}
+.chat-input:focus{border-color:var(--blue);background:var(--card)}
+.chat-send{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.chat-send:hover{background:var(--blue2)}
+.chat-send:active{transform:scale(0.96)}
+.chat-typing{display:flex;align-items:center;gap:6px;padding:10px 14px;font-size:12px;color:var(--ink3);align-self:flex-start}
+.chat-typing span{width:6px;height:6px;border-radius:50%;background:var(--ink4);animation:typing 1.2s infinite}
+.chat-typing span:nth-child(2){animation-delay:0.2s}
+.chat-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typing{0%,80%,100%{transform:scale(1);opacity:0.5}40%{transform:scale(1.3);opacity:1}}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 0}
+.chat-sug{background:var(--blue-l);color:var(--blue-m);border:1px solid rgba(92,122,202,0.2);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:'Outfit',sans-serif}
+.chat-sug:hover{background:var(--blue-l);border-color:var(--blue-m);transform:translateY(-1px)}
+
+/* ══ DNA CARD ══ */
+.dna-card{background:linear-gradient(135deg,var(--blue),var(--blue3));border-radius:var(--r2);padding:22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+.dna-card::after{content:'';position:absolute;right:-30px;bottom:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.04)}
+.dna-tag{font-size:9px;font-weight:700;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.dna-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:8px;line-height:1.3}
+.dna-desc{font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;margin-bottom:16px}
+.dna-traits{display:flex;flex-wrap:wrap;gap:6px}
+.dna-trait{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85);font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.15)}
+
+/* ══ COMPARE ══ */
+.cmp-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch}
+.cmp-col{padding:16px}
+.cmp-col-label{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;text-align:center}
+.cmp-divider{width:1px;background:var(--ink5);margin:16px 0}
+.cmp-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ink5)}
+.cmp-row:last-child{border:none}
+.cmp-cat{font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.cmp-val{font-size:12px;font-weight:700;color:var(--ink)}
+.cmp-delta{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+.cmp-delta.up{background:var(--red-l);color:var(--red)}
+.cmp-delta.down{background:var(--green-l);color:var(--green2)}
+.cmp-delta.eq{background:var(--bg);color:var(--ink3)}
+
+/* ══ FILTER BAR ══ */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--ink5);flex-wrap:wrap}
+.filter-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--ink5);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all 0.15s;font-family:'Outfit',sans-serif}
+.filter-chip:hover{border-color:var(--blue-m);color:var(--blue-m)}
+.filter-chip.active{background:var(--blue-l);border-color:var(--blue-m);color:var(--blue-m);font-weight:600}
+.filter-chip .x{margin-left:2px;font-size:12px;opacity:0.6}
+.filter-select{background:var(--bg);border:1px solid var(--ink5);border-radius:var(--r);padding:5px 10px;font-family:'Outfit',sans-serif;font-size:11px;color:var(--ink2);outline:none;cursor:pointer}
+
+/* ══ PDF PREVIEW ══ */
+.pdf-preview{background:var(--ink6);border:1px solid var(--ink5);border-radius:var(--r2);padding:24px;text-align:center;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.pdf-icon{font-size:40px}
+.pdf-title{font-size:14px;font-weight:600;color:var(--ink)}
+.pdf-sub{font-size:12px;color:var(--ink3)}
+
+/* ══ HISTORY ══ */
+.hist-row{display:grid;grid-template-columns:1fr 60px 100px 90px;padding:12px 16px;border-bottom:1px solid var(--ink5);cursor:pointer;transition:background 0.1s;align-items:center}
+.hist-row:last-child{border:none}
+.hist-row:hover{background:var(--ink6)}
+
+/* ══ EMPTY ══ */
 .empty{text-align:center;padding:48px 20px;color:var(--ink3)}
 .empty-icon{font-size:36px;margin-bottom:12px}
 .empty-title{font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:6px}
 .empty-sub{font-size:13px;line-height:1.6;margin-bottom:16px}
+
+/* ══ SKELETON ══ */
+.skel{background:linear-gradient(90deg,var(--ink5) 25%,var(--bg) 50%,var(--ink5) 75%);background-size:400% 100%;animation:skel 1.5s ease infinite;border-radius:4px}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* ══ DARK MODE TOGGLE ══ */
+.dark-toggle{position:relative;width:36px;height:20px}
+.dark-toggle input{opacity:0;width:0;height:0}
+.dark-slider{position:absolute;inset:0;background:var(--ink5);border-radius:20px;cursor:pointer;transition:all 0.3s}
+.dark-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--card);border-radius:50%;transition:transform 0.3s}
+input:checked+.dark-slider{background:var(--blue)}
+input:checked+.dark-slider::before{transform:translateX(16px)}
+
+/* ══ PREDICTIVE ALERT ══ */
+.pred-alert{border-radius:var(--r2);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;border-width:1px;border-style:solid;transition:transform 0.2s}
+.pred-alert:hover{transform:translateX(3px)}
+.pred-icon{font-size:20px;flex-shrink:0}
+.pred-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.pred-text{font-size:11px;color:var(--ink3);line-height:1.5}
+.pred-days{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:5px;display:inline-block}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:0;top:0;z-index:40;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .kgrid{grid-template-columns:1fr 1fr}
+  .g3,.g3r{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:1fr}
+  .cmp-divider{display:none}
+}
 </style>
 </head>
 <body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">
+    <div class="splash-mark">G</div>
+    <div class="splash-name">Grano<span>.</span></div>
+  </div>
+  <div class="splash-sub">Gestão Financeira Inteligente</div>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-container"></div>
 
 <!-- LOADING -->
 <div class="loading" id="loading">
@@ -226,25 +414,26 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
     <div class="lstep" id="ls1">Lendo as transações</div>
     <div class="lstep" id="ls2">Classificando categorias</div>
     <div class="lstep" id="ls3">Identificando padrões comportamentais</div>
-    <div class="lstep" id="ls4">Calculando projeção mensal</div>
-    <div class="lstep" id="ls5">Gerando diagnóstico financeiro</div>
+    <div class="lstep" id="ls4">Calculando projeção e alertas preditivos</div>
+    <div class="lstep" id="ls5">Gerando DNA financeiro e diagnóstico</div>
   </div>
 </div>
 
 <!-- MODAL IMPORTAR -->
-<div class="modal-bg" id="modal">
-  <div class="modal" onclick="event.stopPropagation()">
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
     <div class="mh2">
       <div class="mt2">Importar extrato</div>
       <button class="mc" onclick="closeModal()">✕</button>
     </div>
-    <div class="mb">
-      <div class="uz">
+    <div class="mb2">
+      <div class="uz" onclick="document.getElementById('file-input').click()">
         <div style="font-size:28px;margin-bottom:8px">📄</div>
-        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px">Upload em breve</div>
-        <div style="font-size:11px;color:var(--ink4)">Cole o texto do extrato abaixo por enquanto</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px">Clique para fazer upload</div>
+        <div style="font-size:11px;color:var(--ink4)">PDF, CSV ou OFX do seu banco</div>
+        <input type="file" id="file-input" accept=".pdf,.csv,.txt,.ofx" style="display:none" onchange="handleFile(this)">
       </div>
-      <div class="dv">ou</div>
+      <div class="dv">ou cole o texto</div>
       <textarea class="pa" id="paste-area" placeholder="Cole aqui o extrato copiado do seu banco ou fatura...&#10;&#10;Ex:&#10;01/12  iFood           -45,90&#10;02/12  Uber            -23,50&#10;03/12  Supermercado   -187,40"></textarea>
     </div>
     <div class="mf2">
@@ -255,26 +444,44 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
   </div>
 </div>
 
+<!-- MODAL CHAT IA -->
+<div class="modal-bg" id="chat-modal" onclick="if(event.target===this)closeChatModal()">
+  <div class="modal" style="width:580px">
+    <div class="mh2">
+      <div>
+        <div class="mt2">💬 Chat com IA Financeira</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">Pergunte qualquer coisa sobre seus dados</div>
+      </div>
+      <button class="mc" onclick="closeChatModal()">✕</button>
+    </div>
+    <div class="chat-suggestions" id="chat-sugs"></div>
+    <div class="chat-wrap">
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chat-input" placeholder="Ex: Por que gastei tanto em novembro? Onde posso economizar?" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="chat-send" onclick="sendChat()">Enviar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN -->
-<div class="screen active" id="login">
+<div class="screen active" id="login" style="position:relative">
   <div class="login-card">
     <div class="login-logo">G</div>
     <div class="login-title">Grano<span>.</span></div>
     <div class="login-sub">Inteligência financeira para quem ganha bem mas quer guardar mais.</div>
     <button class="google-btn" onclick="signInGoogle()">
-      <svg width="18" height="18" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Entrar com Google
     </button>
-    <button class="demo-btn" onclick="continueDemo()">👀 Ver demonstração</button>
-    <div class="login-features">
+    <button class="demo-btn" onclick="continueDemo()">👀 Ver demonstração completa</button>
+    <div class="login-feats">
       <div class="login-feat"><span>🔒</span><span>Seus dados ficam na sua conta. Ninguém tem acesso.</span></div>
       <div class="login-feat"><span>💰</span><span>Gratuito. Sem cartão de crédito.</span></div>
-      <div class="login-feat"><span>🧠</span><span>IA analisa padrões comportamentais reais.</span></div>
+      <div class="login-feat"><span>🧠</span><span>IA analisa padrões comportamentais reais dos seus dados.</span></div>
+      <div class="login-feat"><span>💬</span><span>Chat com IA sobre seus próprios gastos.</span></div>
     </div>
     <div class="login-status" id="login-status"></div>
   </div>
@@ -282,10 +489,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
 
 <!-- APP -->
 <div class="screen" id="app">
-  <aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
     <div class="sb-logo">
-      <div class="sb-logo-mark">G</div>
-      <div class="sb-logo-text">Grano<small>Gestão Financeira</small></div>
+      <div class="sb-mark">G</div>
+      <div class="sb-name">Grano<small>Gestão Financeira</small></div>
     </div>
     <div style="padding:6px;flex:1;overflow-y:auto">
       <div class="sb-sec">Principal</div>
@@ -293,60 +501,78 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
       <button class="sb-item" id="nav-transacoes" onclick="navTo('transacoes')"><span class="sb-icon">↕</span>Transações</button>
       <button class="sb-item" id="nav-fluxo" onclick="navTo('fluxo')"><span class="sb-icon">📈</span>Fluxo de Caixa</button>
       <button class="sb-item" id="nav-categorias" onclick="navTo('categorias')"><span class="sb-icon">◉</span>Categorias</button>
-      <div class="sb-sec">Análise</div>
-      <button class="sb-item" id="nav-insights" onclick="navTo('insights')"><span class="sb-icon">✦</span>Inteligência</button>
-      <button class="sb-item" id="nav-metas" onclick="navTo('metas')"><span class="sb-icon">◎</span>Metas</button>
+      <div class="sb-sec">Inteligência</div>
+      <button class="sb-item" id="nav-insights" onclick="navTo('insights')">
+        <span class="sb-icon">🧠</span>Inteligência IA
+        <span class="sb-badge" id="insights-badge" style="display:none">!</span>
+      </button>
+      <button class="sb-item" id="nav-chat" onclick="openChatModal()"><span class="sb-icon">💬</span>Chat com IA</button>
+      <button class="sb-item" id="nav-comparativo" onclick="navTo('comparativo')"><span class="sb-icon">📊</span>Comparativo</button>
+      <button class="sb-item" id="nav-preditivo" onclick="navTo('preditivo')"><span class="sb-icon">🔮</span>Alertas Preditivos</button>
+      <div class="sb-sec">Evolução</div>
+      <button class="sb-item" id="nav-metas" onclick="navTo('metas')"><span class="sb-icon">◎</span>Metas & Score</button>
       <button class="sb-item" id="nav-historico" onclick="navTo('historico')"><span class="sb-icon">📅</span>Histórico</button>
+      <button class="sb-item" id="nav-relatorio" onclick="navTo('relatorio')"><span class="sb-icon">📄</span>Relatório PDF</button>
       <div class="sb-sec">Conta</div>
       <button class="sb-item" id="nav-config" onclick="navTo('config')"><span class="sb-icon">⚙</span>Configurações</button>
     </div>
     <div class="sb-footer">
-      <div class="sb-demo-badge" id="demo-badge" style="display:none">
+      <div class="sb-demo" id="demo-badge" style="display:none">
         📊 Dados de demonstração.<br><a onclick="openModal()">Importe seu extrato →</a>
       </div>
       <div class="sb-user" onclick="doSignOut()">
-        <div class="sb-avatar" id="sb-avatar">?</div>
+        <div class="sb-av" id="sb-av">?</div>
         <div style="flex:1;min-width:0">
           <div class="sb-uname" id="sb-name">Usuário</div>
-          <div class="sb-uaction">Sair da conta</div>
+          <div class="sb-uact">Sair da conta</div>
         </div>
       </div>
     </div>
   </aside>
 
+  <!-- MAIN -->
   <main style="flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0">
     <header class="topbar">
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="month-nav">
+      <button class="tb-icon" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+      <div class="tb-title" id="tb-title">Dashboard</div>
+      <div class="month-ctrl">
         <button onclick="changeMonth(-1)">‹</button>
-        <span id="month-label">Dezembro 2024</span>
+        <span id="month-label" style="min-width:120px;text-align:center">Dezembro 2024</span>
         <button onclick="changeMonth(1)">›</button>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="tb-btn tb-sec" onclick="openModal()">📥 Importar extrato</button>
-        <button class="tb-btn tb-green" onclick="alert('Open Finance em breve! 🔗')">🔗 Open Finance</button>
+      <div class="tb-search">
+        <span>🔍</span>
+        <input id="global-search" placeholder="Buscar transação..." oninput="globalSearch(this.value)" onkeydown="if(event.key==='Escape')this.value=''">
       </div>
+      <button class="tb-btn tb-sec" onclick="openModal()">📥 Importar</button>
+      <button class="tb-btn tb-green" onclick="openChatModal()">💬 Chat IA</button>
+      <label class="dark-toggle" title="Modo escuro">
+        <input type="checkbox" id="dark-toggle" onchange="toggleDark(this.checked)">
+        <span class="dark-slider"></span>
+      </label>
     </header>
 
-    <div class="content">
+    <div class="content" id="main-content">
 
-      <!-- DASHBOARD -->
+      <!-- ══ DASHBOARD ══ -->
       <div class="page active" id="page-dashboard">
         <div class="ib">
           <span style="font-size:26px;flex-shrink:0">💡</span>
           <div style="flex:1">
-            <div class="ib-tag">Padrão identificado</div>
-            <div class="ib-title" id="ib-title">Carregando análise...</div>
-            <div class="ib-det" id="ib-det"></div>
+            <div class="ib-tag">Padrão identificado pela IA</div>
+            <div class="ib-title" id="ib-title">Carregando análise inteligente...</div>
+            <div class="ib-det" id="ib-det">Importe um extrato para ver seu diagnóstico personalizado.</div>
           </div>
-          <button onclick="navTo('insights')" style="flex-shrink:0;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:7px 14px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">Ver análise →</button>
+          <button onclick="navTo('insights')" style="flex-shrink:0;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:7px 14px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">Ver análise →</button>
         </div>
+
         <div class="kgrid">
-          <div class="kpi"><div class="kl">Total de gastos</div><div class="kv red" id="k-total">—</div><div class="ks" id="k-per">—</div></div>
-          <div class="kpi"><div class="kl">Score financeiro</div><div class="kv blue" id="k-score">—</div><div class="ks" id="k-nivel">—</div></div>
+          <div class="kpi red"><div class="kl">Total de gastos</div><div class="kv red" id="k-total">—</div><div class="ks" id="k-per">—</div></div>
+          <div class="kpi blue"><div class="kl">Score financeiro</div><div class="kv blue" id="k-score">—</div><div class="ks" id="k-nivel">—</div></div>
           <div class="kpi"><div class="kl">Transações</div><div class="kv" id="k-txns">—</div><div class="ks">Ticket médio: <strong id="k-avg">—</strong></div></div>
-          <div class="kpi"><div class="kl">Projeção mensal</div><div class="kv red" id="k-proj">—</div><div class="ks">Ritmo atual</div></div>
+          <div class="kpi amber"><div class="kl">Projeção mensal</div><div class="kv amber" id="k-proj">—</div><div class="ks">Ritmo atual extrapolado</div></div>
         </div>
+
         <div class="g2">
           <div class="card">
             <div class="ch"><div class="ct">Projeção do mês</div></div>
@@ -360,24 +586,22 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
             </div>
           </div>
           <div class="card">
-            <div class="ch"><div class="ct">Alertas inteligentes</div><span class="badge b-blue" id="alert-count">3</span></div>
-            <div id="d-alerts"></div>
+            <div class="ch"><div class="ct">Alertas inteligentes</div><span class="badge b-blue" id="alert-count">0</span></div>
+            <div id="d-alerts"><div style="padding:24px;text-align:center;font-size:12px;color:var(--ink4)">Importe um extrato para ver alertas</div></div>
           </div>
         </div>
+
         <div class="g3">
           <div class="card">
             <div class="ch"><div class="ct">Gastos por categoria</div><button class="cl" onclick="navTo('categorias')">ver detalhe →</button></div>
-            <div class="cbsm" id="d-cats"></div>
+            <div class="cbsm" id="d-cats"><div style="padding:24px 0;text-align:center;font-size:12px;color:var(--ink4)">Sem dados</div></div>
           </div>
           <div class="card">
             <div class="ch"><div class="ct">Score financeiro</div></div>
             <div class="cb" style="padding-bottom:10px">
               <div style="display:flex;align-items:center;justify-content:center;padding:12px 0">
                 <div class="sring">
-                  <svg viewBox="0 0 110 110">
-                    <circle class="srt" cx="55" cy="55" r="46"/>
-                    <circle class="srf" id="srf" cx="55" cy="55" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03"/>
-                  </svg>
+                  <svg viewBox="0 0 110 110"><circle class="srt" cx="55" cy="55" r="46"/><circle class="srf" id="srf" cx="55" cy="55" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03"/></svg>
                   <div class="src">
                     <div style="font-size:26px;font-weight:800;color:var(--ink);line-height:1" id="d-snum">0</div>
                     <div style="font-size:10px;color:var(--ink4);margin-top:1px">/1000</div>
@@ -386,54 +610,65 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
               </div>
               <div style="text-align:center">
                 <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:5px" id="d-slevel">—</div>
-                <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:12px" id="d-sdesc">—</div>
-                <div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:5px">
-                  <div id="d-lbar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-m));border-radius:3px;width:0%;transition:width 1.1s"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between">
-                  <span style="font-size:9px;color:var(--ink4)">Desorganizado</span>
-                  <span style="font-size:9px;color:var(--ink4)">Investidor</span>
-                </div>
+                <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:12px" id="d-sdesc">Importe um extrato para calcular seu score.</div>
+                <div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:5px"><div id="d-lbar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-m));border-radius:3px;width:0%;transition:width 1.1s"></div></div>
+                <div style="display:flex;justify-content:space-between"><span style="font-size:9px;color:var(--ink4)">Desorganizado</span><span style="font-size:9px;color:var(--ink4)">Investidor</span></div>
               </div>
             </div>
           </div>
         </div>
+
         <div class="card" style="margin-bottom:20px">
           <div class="ch"><div class="ct">Transações recentes</div><button class="cl" onclick="navTo('transacoes')">ver todas →</button></div>
-          <table class="txt" id="d-txs"><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th style="text-align:right">Valor</th></tr></thead><tbody></tbody></table>
+          <table class="txt" id="d-txs"><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th style="text-align:right">Valor</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--ink4);font-size:12px">Sem transações — importe um extrato</td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- TRANSAÇÕES -->
+      <!-- ══ TRANSAÇÕES ══ -->
       <div class="page" id="page-transacoes">
         <div class="card" style="margin-bottom:20px">
           <div class="ch">
-            <div><div class="ct">Todas as transações</div><div class="cs" id="tx-sub">— lançamentos</div></div>
-            <button class="tb-btn tb-sec" onclick="openModal()">📥 Importar</button>
+            <div><div class="ct">Todas as transações</div><div class="cs" id="tx-sub">—</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="tb-btn tb-sec" onclick="exportCSV()">⬇ CSV</button>
+              <button class="tb-btn tb-sec" onclick="openModal()">📥 Importar</button>
+            </div>
           </div>
-          <table class="txt" id="all-txs"><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th style="text-align:right">Valor</th></tr></thead><tbody></tbody></table>
+          <div class="filter-bar" id="tx-filters">
+            <span style="font-size:11px;color:var(--ink3);font-weight:500">Filtrar:</span>
+            <div id="cat-chips"></div>
+            <select class="filter-select" id="sort-select" onchange="sortTx(this.value)">
+              <option value="valor">Maior valor</option>
+              <option value="data">Data</option>
+              <option value="nome">Nome A-Z</option>
+            </select>
+          </div>
+          <table class="txt" id="all-txs">
+            <thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th style="text-align:right">Valor</th></tr></thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
 
-      <!-- FLUXO -->
+      <!-- ══ FLUXO DE CAIXA ══ -->
       <div class="page" id="page-fluxo">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
-          <div class="kpi"><div class="kl">Projeção mensal</div><div class="kv red" id="f-proj">—</div><div class="ks">ritmo atual</div></div>
-          <div class="kpi"><div class="kl">Gasto até agora</div><div class="kv" id="f-now">—</div><div class="ks" id="f-pct">—</div></div>
-          <div class="kpi"><div class="kl">Gastos fixos/mês</div><div class="kv green" id="f-ftot">—</div><div class="ks" id="f-fcount">—</div></div>
+          <div class="kpi red"><div class="kl">Projeção mensal</div><div class="kv red" id="f-proj">—</div><div class="ks">ritmo atual</div></div>
+          <div class="kpi blue"><div class="kl">Gasto até agora</div><div class="kv" id="f-now">—</div><div class="ks" id="f-pct">—</div></div>
+          <div class="kpi green"><div class="kl">Gastos fixos/mês</div><div class="kv green" id="f-ftot">—</div><div class="ks" id="f-fcnt">—</div></div>
         </div>
         <div class="g2">
           <div class="card">
             <div class="ch"><div class="ct">Gastos por dia — últimos 7 dias</div></div>
             <div style="padding:16px 18px">
-              <div class="cb-bars">
-                <div class="bc"><div class="bb bn" style="height:40px"></div><div class="bd">Seg</div></div>
-                <div class="bc"><div class="bb bn" style="height:62px"></div><div class="bd">Ter</div></div>
-                <div class="bc"><div class="bb bh" style="height:90px"></div><div class="bd">Qua</div></div>
-                <div class="bc"><div class="bb bn" style="height:48px"></div><div class="bd">Qui</div></div>
-                <div class="bc"><div class="bb bn" style="height:44px"></div><div class="bd">Sex</div></div>
-                <div class="bc"><div class="bb bh" style="height:108px"></div><div class="bd">Sáb</div></div>
-                <div class="bc"><div class="bb bn" style="height:56px"></div><div class="bd">Dom</div></div>
+              <div class="cbars" id="chart-bars">
+                <div class="bc"><div class="bb n" style="height:40px"></div><div class="bday">Seg</div></div>
+                <div class="bc"><div class="bb n" style="height:62px"></div><div class="bday">Ter</div></div>
+                <div class="bc"><div class="bb h" style="height:90px"></div><div class="bday">Qua</div></div>
+                <div class="bc"><div class="bb n" style="height:48px"></div><div class="bday">Qui</div></div>
+                <div class="bc"><div class="bb n" style="height:44px"></div><div class="bday">Sex</div></div>
+                <div class="bc"><div class="bb h" style="height:108px"></div><div class="bday">Sáb</div></div>
+                <div class="bc"><div class="bb n" style="height:56px"></div><div class="bday">Dom</div></div>
               </div>
               <div style="display:flex;gap:14px">
                 <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--blue-l);border:1px solid #C8D8F8"></div>Normal</div>
@@ -458,26 +693,26 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
           </div>
         </div>
         <div class="card" style="margin-bottom:20px">
-          <div class="ch"><div class="ct">Gastos fixos detectados</div><div class="cs">Recorrências identificadas automaticamente</div></div>
-          <div id="f-fixos"></div>
+          <div class="ch"><div class="ct">Gastos fixos detectados</div><div class="cs">Recorrências identificadas automaticamente pela IA</div></div>
+          <div id="f-fixos"><div style="padding:24px;text-align:center;font-size:12px;color:var(--ink4)">Sem dados</div></div>
         </div>
       </div>
 
-      <!-- CATEGORIAS -->
+      <!-- ══ CATEGORIAS ══ -->
       <div class="page" id="page-categorias">
         <div class="g2">
           <div class="card">
             <div class="ch"><div class="ct">Distribuição por categoria</div></div>
-            <div class="cbsm" id="cat-full"></div>
+            <div class="cbsm" id="cat-full"><div style="padding:24px 0;text-align:center;font-size:12px;color:var(--ink4)">Sem dados</div></div>
           </div>
           <div class="card">
-            <div class="ch"><div class="ct">Comparativo mensal</div></div>
+            <div class="ch"><div class="ct">Análise comparativa</div></div>
             <div class="cb">
-              <div style="background:var(--amber-l);border:1px solid rgba(217,119,6,0.15);border-radius:7px;padding:13px;margin-bottom:12px">
-                <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:3px">📊 vs. mês anterior</div>
-                <div style="font-size:12px;color:var(--ink2)">Delivery subiu <strong style="color:var(--red)">+12%</strong>. Compras Online caiu <strong style="color:var(--green2)">-8%</strong>. Saúde estável.</div>
+              <div style="background:var(--amber-l);border:1px solid rgba(217,119,6,0.15);border-radius:7px;padding:13px;margin-bottom:12px" id="cat-comparativo">
+                <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:3px">📊 Comparativo automático</div>
+                <div style="font-size:12px;color:var(--ink2)">Importe mais de um mês para ver comparativo.</div>
               </div>
-              <div style="font-size:12px;color:var(--ink3);line-height:1.7">Crescimento em Alimentação & Delivery por 3 meses consecutivos — tendência de hábito.</div>
+              <div style="font-size:12px;color:var(--ink3);line-height:1.7" id="cat-insight">O comparativo aparece após importar dois ou mais meses.</div>
             </div>
           </div>
         </div>
@@ -487,80 +722,140 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
         </div>
       </div>
 
-      <!-- INSIGHTS -->
+      <!-- ══ INTELIGÊNCIA IA ══ -->
       <div class="page" id="page-insights">
-        <div class="ib" style="margin-bottom:20px">
-          <span style="font-size:26px;flex-shrink:0">🧠</span>
-          <div>
-            <div class="ib-tag">Diagnóstico comportamental</div>
-            <div class="ib-title" id="ins-title">—</div>
-            <div class="ib-det" id="ins-det">—</div>
-          </div>
-        </div>
+        <div id="dna-wrap"></div>
         <div class="g2">
           <div class="card">
-            <div class="ch"><div class="ct">Padrões identificados</div></div>
-            <div id="ins-patterns"></div>
+            <div class="ch"><div class="ct">Padrões comportamentais</div><span class="badge b-purple" id="patterns-count">0</span></div>
+            <div id="ins-patterns"><div style="padding:24px;text-align:center;font-size:12px;color:var(--ink4)">Importe um extrato para ver seus padrões</div></div>
           </div>
           <div class="card">
-            <div class="ch"><div class="ct">Recomendações</div></div>
+            <div class="ch"><div class="ct">Plano de ação da IA</div></div>
             <div class="cb">
               <div style="background:var(--green-l);border:1px solid rgba(0,184,122,0.2);border-radius:7px;padding:14px;margin-bottom:12px">
                 <div style="font-size:12px;font-weight:700;color:var(--green2);margin-bottom:5px" id="ins-rtitle">—</div>
-                <div style="font-size:11px;color:var(--ink2);line-height:1.7" id="ins-rdet"></div>
+                <div style="font-size:11px;color:var(--ink2);line-height:1.7" id="ins-rdet">Importe um extrato para ver recomendações personalizadas.</div>
               </div>
               <div style="font-size:11px;color:var(--ink3);line-height:1.7" id="ins-snote">—</div>
+              <button onclick="openChatModal()" style="margin-top:14px;width:100%;background:var(--blue);color:#fff;border:none;padding:9px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='var(--blue2)'" onmouseout="this.style.background='var(--blue)'">💬 Perguntar para a IA sobre meus dados →</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- METAS -->
-      <div class="page" id="page-metas">
-        <div style="background:linear-gradient(135deg,#0F7B6C,#0A5C50);border-radius:var(--r2);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px">
-          <span style="font-size:26px">🎯</span>
-          <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">Metas financeiras inteligentes</div><div style="font-size:12px;color:rgba(255,255,255,0.65)">Cada meta cumprida aumenta seu score e avança seu nível.</div></div>
-        </div>
-        <div class="g2">
-          <div class="card"><div class="ch"><div class="ct">Metas ativas</div></div><div id="metas-list"></div></div>
-          <div class="card">
-            <div class="ch"><div class="ct">Evolução de nível</div></div>
-            <div class="cb">
-              <div style="display:flex;gap:6px;margin-bottom:18px">
-                <div style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5)"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Desorganizado</div><div style="font-size:10px;color:var(--ink4)">0–250</div></div>
-                <div style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--blue-l);border:1px solid rgba(27,58,107,0.15)"><div style="font-size:9px;font-weight:700;color:var(--blue);margin-bottom:3px">✓ Controlado</div><div style="font-size:10px;font-weight:700;color:var(--blue)">250–500</div></div>
-                <div style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5)"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Estruturado</div><div style="font-size:10px;color:var(--ink4)">500–750</div></div>
-                <div style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5)"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Investidor</div><div style="font-size:10px;color:var(--ink4)">750+</div></div>
-              </div>
-              <div style="font-size:10px;color:var(--ink3);margin-bottom:6px">Progresso atual</div>
-              <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:5px">
-                <div id="meta-lbar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-m));border-radius:4px;width:0%;transition:width 1.1s"></div>
-              </div>
-              <div style="display:flex;justify-content:space-between">
-                <span style="font-size:10px;color:var(--ink3)" id="meta-pts">—</span>
-                <span style="font-size:10px;color:var(--amber);font-weight:600" id="meta-next">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- HISTÓRICO -->
-      <div class="page" id="page-historico">
+      <!-- ══ COMPARATIVO ══ -->
+      <div class="page" id="page-comparativo">
         <div class="card" style="margin-bottom:20px">
-          <div class="ch"><div class="ct">Histórico de análises</div><div class="cs" id="hist-sub">0 meses analisados</div></div>
-          <div id="hist-list">
+          <div class="ch">
+            <div><div class="ct">Comparativo mensal</div><div class="cs">Evolução dos seus gastos ao longo do tempo</div></div>
+          </div>
+          <div id="cmp-content">
             <div class="empty">
-              <div class="empty-icon">📅</div>
-              <div class="empty-title">Nenhuma análise ainda</div>
-              <div class="empty-sub">Importe seu primeiro extrato para começar o histórico.</div>
+              <div class="empty-icon">📊</div>
+              <div class="empty-title">Importe 2 ou mais meses</div>
+              <div class="empty-sub">O comparativo fica disponível quando você tiver histórico de pelo menos 2 meses importados.</div>
               <button onclick="openModal()" style="background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📥 Importar extrato</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- CONFIG -->
+      <!-- ══ ALERTAS PREDITIVOS ══ -->
+      <div class="page" id="page-preditivo">
+        <div class="ib" style="margin-bottom:20px">
+          <span style="font-size:26px;flex-shrink:0">🔮</span>
+          <div>
+            <div class="ib-tag">Inteligência preditiva</div>
+            <div class="ib-title">A IA prevê o que vai acontecer antes de acontecer</div>
+            <div class="ib-det">Baseado nos seus padrões históricos, o Grano antecipa riscos financeiros com até 7 dias de antecedência.</div>
+          </div>
+        </div>
+        <div id="pred-alerts">
+          <div class="empty">
+            <div class="empty-icon">🔮</div>
+            <div class="empty-title">Sem alertas preditivos ainda</div>
+            <div class="empty-sub">Importe um extrato para a IA analisar seus padrões e gerar previsões.</div>
+            <button onclick="openModal()" style="background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📥 Importar extrato</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ METAS & SCORE ══ -->
+      <div class="page" id="page-metas">
+        <div style="background:linear-gradient(135deg,#0F7B6C,#0A5C50);border-radius:var(--r2);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px">
+          <span style="font-size:26px">🎯</span>
+          <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">Metas financeiras inteligentes</div><div style="font-size:12px;color:rgba(255,255,255,0.65)">Cada meta cumprida aumenta seu score e avança seu nível.</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="ch"><div class="ct">Metas ativas</div></div><div id="metas-list"><div style="padding:24px;text-align:center;font-size:12px;color:var(--ink4)">Sem metas — importe um extrato</div></div></div>
+          <div class="card">
+            <div class="ch"><div class="ct">Evolução de nível</div></div>
+            <div class="cb">
+              <div style="display:flex;gap:6px;margin-bottom:18px">
+                <div id="lvl-0" style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5);transition:all 0.3s"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Desorganizado</div><div style="font-size:10px;color:var(--ink4)">0–250</div></div>
+                <div id="lvl-1" style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5);transition:all 0.3s"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Controlado</div><div style="font-size:10px;color:var(--ink4)">250–500</div></div>
+                <div id="lvl-2" style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5);transition:all 0.3s"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Estruturado</div><div style="font-size:10px;color:var(--ink4)">500–750</div></div>
+                <div id="lvl-3" style="flex:1;text-align:center;padding:10px 4px;border-radius:7px;background:var(--bg);border:1px solid var(--ink5);transition:all 0.3s"><div style="font-size:9px;font-weight:600;color:var(--ink4);margin-bottom:3px">Investidor</div><div style="font-size:10px;color:var(--ink4)">750+</div></div>
+              </div>
+              <div style="font-size:10px;color:var(--ink3);margin-bottom:6px">Progresso atual</div>
+              <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:5px"><div id="meta-lbar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-m));border-radius:4px;width:0%;transition:width 1.2s"></div></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-size:10px;color:var(--ink3)" id="meta-pts">0 pts</span><span style="font-size:10px;color:var(--amber);font-weight:600" id="meta-next">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ HISTÓRICO ══ -->
+      <div class="page" id="page-historico">
+        <div class="card" style="margin-bottom:20px">
+          <div class="ch"><div class="ct">Histórico de análises</div><div class="cs" id="hist-sub">0 meses</div></div>
+          <div id="hist-list">
+            <div class="empty">
+              <div class="empty-icon">📅</div>
+              <div class="empty-title">Nenhuma análise ainda</div>
+              <div class="empty-sub">Importe extratos mensais para construir seu histórico financeiro.</div>
+              <button onclick="openModal()" style="background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📥 Importar extrato</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ RELATÓRIO PDF ══ -->
+      <div class="page" id="page-relatorio">
+        <div class="g2">
+          <div class="card">
+            <div class="ch"><div class="ct">Gerar relatório PDF</div></div>
+            <div class="cb">
+              <div style="margin-bottom:16px">
+                <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">O que está incluído</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>Score e nível financeiro</div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>Gastos por categoria com gráficos</div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>DNA Financeiro e padrões</div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>Alertas e recomendações da IA</div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>Todas as transações do período</div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)"><span style="color:var(--green)">✓</span>Projeção e comparativo mensal</div>
+                </div>
+              </div>
+              <button onclick="generatePDF()" id="pdf-btn" style="width:100%;background:var(--blue);color:#fff;border:none;padding:13px;border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='var(--blue2)'" onmouseout="this.style.background='var(--blue)'">
+                📄 Gerar relatório PDF
+              </button>
+              <div style="font-size:11px;color:var(--ink4);text-align:center;margin-top:8px">Gerado diretamente no seu navegador · Grátis</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Preview do relatório</div></div>
+            <div class="pdf-preview" id="pdf-preview">
+              <div class="pdf-icon">📊</div>
+              <div class="pdf-title" id="pdf-prev-title">Relatório não gerado</div>
+              <div class="pdf-sub" id="pdf-prev-sub">Importe um extrato e clique em "Gerar relatório"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CONFIGURAÇÕES ══ -->
       <div class="page" id="page-config">
         <div style="background:linear-gradient(135deg,#0F7B6C,#0A5C50);border-radius:var(--r2);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px">
           <span style="font-size:26px">🔗</span>
@@ -589,116 +884,168 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);heigh
             <div class="ch"><div class="ct">Sua conta</div></div>
             <div class="cb">
               <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-                <div id="cfg-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--blue);overflow:hidden;flex-shrink:0"></div>
+                <div id="cfg-av" style="width:44px;height:44px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--blue);overflow:hidden;flex-shrink:0"></div>
                 <div><div style="font-size:14px;font-weight:700;color:var(--ink)" id="cfg-name">—</div><div style="font-size:12px;color:var(--ink3)" id="cfg-email">—</div></div>
               </div>
               <div style="background:var(--green-l);border:1px solid rgba(0,184,122,0.15);border-radius:7px;padding:12px;margin-bottom:12px">
                 <div style="font-size:11px;font-weight:600;color:var(--green2);margin-bottom:3px">🎉 Plano Gratuito — Beta</div>
                 <div style="font-size:11px;color:var(--ink2)">Acesso completo durante a validação. Aproveite!</div>
               </div>
-              <button onclick="doSignOut()" style="width:100%;background:var(--red-l);color:var(--red);border:1px solid rgba(224,49,49,0.15);border-radius:7px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">Sair da conta</button>
+              <div style="display:flex;gap:8px">
+                <button onclick="exportAllData()" style="flex:1;background:var(--bg);color:var(--ink2);border:1px solid var(--ink5);border-radius:7px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">⬇ Exportar dados</button>
+                <button onclick="doSignOut()" style="flex:1;background:var(--red-l);color:var(--red);border:1px solid rgba(224,49,49,0.15);border-radius:7px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer">Sair da conta</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Preferências</div></div>
+          <div class="cb">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ink5)">
+              <div><div style="font-size:13px;font-weight:500;color:var(--ink)">Modo escuro</div><div style="font-size:11px;color:var(--ink3)">Ativa o tema escuro em toda a plataforma</div></div>
+              <label class="dark-toggle"><input type="checkbox" id="dark-toggle-2" onchange="toggleDark(this.checked);document.getElementById('dark-toggle').checked=this.checked"><span class="dark-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+              <div><div style="font-size:13px;font-weight:500;color:var(--ink)">Notificações</div><div style="font-size:11px;color:var(--ink3)">Alertas ao importar novo extrato</div></div>
+              <label class="dark-toggle"><input type="checkbox" checked><span class="dark-slider"></span></label>
             </div>
           </div>
         </div>
       </div>
 
-    </div>
+    </div><!-- end content -->
   </main>
-</div>
+</div><!-- end app -->
 
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getFirestore, doc, setDoc, collection, getDocs, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBKk6ktogO4OzJBZAuL4oPtAqnWvAOxMa4",
-  authDomain: "grano-app-21f3b.firebaseapp.com",
-  projectId: "grano-app-21f3b",
-  storageBucket: "grano-app-21f3b.firebasestorage.app",
-  messagingSenderId: "265564029496",
-  appId: "1:265564029496:web:8baa91a586bb8610269ccd"
-}
+const app = initializeApp({
+  apiKey:"AIzaSyBKk6ktogO4OzJBZAuL4oPtAqnWvAOxMa4",
+  authDomain:"grano-app-21f3b.firebaseapp.com",
+  projectId:"grano-app-21f3b",
+  storageBucket:"grano-app-21f3b.firebasestorage.app",
+  messagingSenderId:"265564029496",
+  appId:"1:265564029496:web:8baa91a586bb8610269ccd"
+})
+const auth = getAuth(app)
+const db = getFirestore(app)
 
-const fbApp = initializeApp(firebaseConfig)
-const auth = getAuth(fbApp)
-const db = getFirestore(fbApp)
-
-// ── EXPOR FUNÇÕES PARA O WINDOW ──
-window._fbAuth = auth
-window._fbDb = db
 window._fbSignIn = async () => {
   try {
     document.getElementById('login-status').textContent = 'Abrindo login Google...'
-    const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    await signInWithPopup(auth, new GoogleAuthProvider())
   } catch(e) {
     document.getElementById('login-status').textContent = 'Erro ao fazer login. Tente novamente.'
-    console.error(e)
   }
 }
-window._fbSignOut = async () => {
-  await signOut(auth)
-}
-window._fbSaveAnalysis = async (uid, data) => {
+window._fbSignOut = () => signOut(auth)
+window._fbSave = async (uid, data) => {
   try {
-    const period = data.periodo.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_À-ú]/g, '')
-    await setDoc(doc(db, 'users', uid, 'analyses', period), {
-      period: data.periodo,
-      score: data.score,
-      total_spent: data.total_gasto,
-      result: data,
-      created_at: new Date().toISOString()
+    const key = data.periodo.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
+    await setDoc(doc(db,'users',uid,'analyses',key),{
+      period:data.periodo, score:data.score, total_spent:data.total_gasto,
+      result:data, created_at:new Date().toISOString()
     })
-  } catch(e) { console.error('Erro ao salvar:', e) }
+  } catch(e){ console.error(e) }
 }
-window._fbLoadHistory = async (uid) => {
+window._fbLoad = async (uid) => {
   try {
-    const q = query(collection(db, 'users', uid, 'analyses'), orderBy('created_at', 'desc'), limit(24))
-    const snap = await getDocs(q)
-    return snap.docs.map(d => d.data())
-  } catch(e) { return [] }
+    const q = query(collection(db,'users',uid,'analyses'),orderBy('created_at','desc'),limit(24))
+    return (await getDocs(q)).docs.map(d=>d.data())
+  } catch(e){ return [] }
 }
 
-// ── AUTH STATE ──
 onAuthStateChanged(auth, user => {
-  if (user) {
-    window._currentUser = user
+  window._user = user
+  if(user){
     window.showApp(user)
-    window._fbLoadHistory(user.uid).then(h => {
-      window._history = h
-      window.renderHistory()
-    })
+    window._fbLoad(user.uid).then(h => { window._history=h; renderHistory() })
   } else {
-    window._currentUser = null
-    document.getElementById('login').classList.add('active')
-    document.getElementById('app').classList.remove('active')
+    if(document.getElementById('app').classList.contains('active')) {
+      document.getElementById('login').classList.add('active')
+      document.getElementById('app').classList.remove('active')
+      toast('Você saiu da conta.','info')
+    }
   }
 })
 </script>
 
 <script>
-// ── STATE ──
-let appData = null
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let D = null // current analysis data
 let isDemo = true
 let _history = []
-let currentMonth = new Date(2024, 11, 1)
-const PAGES = ['dashboard','transacoes','fluxo','categorias','insights','metas','historico','config']
-const PAGE_TITLES = {dashboard:'Dashboard',transacoes:'Transações',fluxo:'Fluxo de Caixa',categorias:'Categorias',insights:'Inteligência Financeira',metas:'Metas',historico:'Histórico',config:'Configurações'}
+let chatHistory = []
+let currentMonth = new Date(2024,11,1)
+let darkMode = false
+let activeFilters = new Set()
+let sortMode = 'valor'
 
-// ── AUTH BRIDGES ──
+const PAGES=['dashboard','transacoes','fluxo','categorias','insights','comparativo','preditivo','metas','historico','relatorio','config']
+const PAGE_TITLES={dashboard:'Dashboard',transacoes:'Transações',fluxo:'Fluxo de Caixa',categorias:'Categorias',insights:'Inteligência IA',comparativo:'Comparativo Mensal',preditivo:'Alertas Preditivos',metas:'Metas & Score',historico:'Histórico',relatorio:'Relatório PDF',config:'Configurações'}
+
+// ═══════════════════════════════════════
+// SPLASH
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide')
+    setTimeout(() => document.getElementById('splash').remove(), 600)
+  }, 1800)
+  // Check dark mode pref
+  if(localStorage.getItem('grano_dark')==='1') {
+    darkMode=true
+    document.documentElement.setAttribute('data-theme','dark')
+    document.getElementById('dark-toggle').checked = true
+  }
+  // Mobile menu
+  if(window.innerWidth <= 768) {
+    document.getElementById('menu-btn').style.display = 'flex'
+  }
+})
+
+// ═══════════════════════════════════════
+// TOAST SYSTEM
+// ═══════════════════════════════════════
+function toast(msg, type='success', dur=3000) {
+  const icons = {success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'}
+  const colors = {success:'var(--green)',error:'var(--red)',info:'var(--blue)',warning:'var(--amber)'}
+  const t = document.createElement('div')
+  t.className = `toast ${type}`
+  t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span><div class="toast-bar" style="background:${colors[type]}"></div>`
+  document.getElementById('toast-container').appendChild(t)
+  setTimeout(() => { t.classList.add('out'); setTimeout(()=>t.remove(), 350) }, dur)
+}
+
+// ═══════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════
 function signInGoogle() { window._fbSignIn?.() }
+
 function doSignOut() {
   window._fbSignOut?.()
-  document.getElementById('login').classList.add('active')
-  document.getElementById('app').classList.remove('active')
+  D = null; isDemo = true; _history = []
+  setTimeout(() => {
+    const app = document.getElementById('app')
+    const login = document.getElementById('login')
+    app.classList.remove('active')
+    login.classList.add('active')
+    toast('Até logo! 👋','info')
+  }, 100)
 }
+
 function continueDemo() {
-  appData = demoData()
+  D = demoData()
   isDemo = true
-  showApp({ displayName: 'Modo Demo', email: 'demo@grano.com.br', photoURL: null })
-  renderAll(appData)
+  showApp({displayName:'Modo Demo',email:'demo@grano.com.br',photoURL:null})
+  renderAll(D)
+  toast('Modo demonstração ativo. Importe seu extrato para dados reais.','info',4000)
 }
 
 window.showApp = function(user) {
@@ -710,19 +1057,22 @@ window.showApp = function(user) {
   document.getElementById('sb-name').textContent = name
   document.getElementById('cfg-name').textContent = name
   document.getElementById('cfg-email').textContent = email
-  if (photo) {
-    document.getElementById('sb-avatar').innerHTML = `<img src="${photo}">`
-    document.getElementById('cfg-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
+  if(photo){
+    document.getElementById('sb-av').innerHTML=`<img src="${photo}">`
+    document.getElementById('cfg-av').innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover">`
   } else {
     const ini = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()
-    document.getElementById('sb-avatar').textContent = ini
-    document.getElementById('cfg-avatar').textContent = ini
+    document.getElementById('sb-av').textContent = ini
+    document.getElementById('cfg-av').textContent = ini
   }
-  if (!appData) { appData = demoData(); isDemo = true; renderAll(appData) }
   document.getElementById('demo-badge').style.display = isDemo ? 'block' : 'none'
+  if(!isDemo && !D) { D=demoData(); isDemo=true; renderAll(D) }
+  if(user.displayName && user.displayName !== 'Modo Demo') toast(`Bem-vindo, ${name}! 👋`, 'success')
 }
 
-// ── NAVEGAÇÃO ──
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
 function navTo(p) {
   PAGES.forEach(x => {
     document.getElementById('page-'+x)?.classList.remove('active')
@@ -730,8 +1080,15 @@ function navTo(p) {
   })
   document.getElementById('page-'+p)?.classList.add('active')
   document.getElementById('nav-'+p)?.classList.add('active')
-  document.getElementById('topbar-title').textContent = PAGE_TITLES[p] || p
-  document.querySelector('.content').scrollTop = 0
+  document.getElementById('tb-title').textContent = PAGE_TITLES[p]||p
+  document.getElementById('main-content').scrollTop = 0
+  if(p==='comparativo') renderComparativo()
+  if(p==='preditivo') renderPreditivo()
+  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open')
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open')
 }
 
 function changeMonth(d) {
@@ -740,117 +1097,182 @@ function changeMonth(d) {
     .toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase())
 }
 
-// ── MODAL ──
+function toggleDark(on) {
+  darkMode = on
+  document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light')
+  localStorage.setItem('grano_dark', on ? '1' : '0')
+  document.getElementById('dark-toggle').checked = on
+  document.getElementById('dark-toggle-2').checked = on
+}
+
+// ═══════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════
 function openModal() { document.getElementById('modal').classList.add('open') }
 function closeModal() { document.getElementById('modal').classList.remove('open') }
-document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal() })
+function handleFile(input) {
+  if(input.files[0]) {
+    input.files[0].text().then(t => {
+      document.getElementById('paste-area').value = t
+      toast('Arquivo carregado! Clique em Analisar.','info')
+    })
+  }
+}
 
-// ── ANÁLISE ──
+// ═══════════════════════════════════════
+// ANALYSIS ENGINE
+// ═══════════════════════════════════════
 async function startAnalysis() {
   const txt = document.getElementById('paste-area').value.trim()
-  if (!txt) {
-    document.getElementById('paste-area').style.borderColor = 'var(--red)'
+  if(!txt){
+    document.getElementById('paste-area').style.borderColor='var(--red)'
     document.getElementById('paste-area').focus()
-    setTimeout(() => document.getElementById('paste-area').style.borderColor = '', 1500)
+    setTimeout(()=>document.getElementById('paste-area').style.borderColor='',1500)
+    toast('Cole o extrato antes de analisar.','error')
     return
   }
   closeModal()
   showLoading()
-  const steps = ['ls1','ls2','ls3','ls4','ls5']
-  const labels = ['Lendo as transações...','Classificando categorias...','Identificando padrões...','Calculando projeção...','Gerando diagnóstico...']
-  for (let i = 0; i < steps.length; i++) {
-    await new Promise(r => setTimeout(r, 480))
+
+  const steps=['ls1','ls2','ls3','ls4','ls5']
+  const labels=['Lendo as transações...','Classificando categorias...','Identificando padrões comportamentais...','Calculando projeção e alertas preditivos...','Gerando DNA financeiro e diagnóstico...']
+  for(let i=0;i<steps.length;i++){
+    await new Promise(r=>setTimeout(r,460))
     document.getElementById(steps[i]).classList.add('done')
-    document.getElementById('llabel').textContent = labels[i]
-    document.getElementById('lb').style.width = ((i+1)/5*100)+'%'
+    document.getElementById('llabel').textContent=labels[i]
+    document.getElementById('lb').style.width=((i+1)/5*100)+'%'
   }
 
-  const prompt = `Você é o motor de análise do Grano, plataforma de gestão financeira pessoal brasileira.
-Analise o extrato abaixo e retorne SOMENTE JSON válido (sem markdown, sem texto extra):
-{"score":<0-1000>,"score_titulo":"<Desorganizado|Controlado|Estruturado|Investidor>","score_desc":"<frase>","total_gasto":<n>,"num_transacoes":<n>,"ticket_medio":<n>,"periodo":"<ex:Dezembro 2024>","categorias":[{"nome":"<cat>","valor":<n>,"percentual":<n>}],"transacoes":[{"nome":"<nome>","categoria":"<cat>","valor":<negativo>,"data":"<dd/mm>","emoji":"<emoji>"}],"insight_titulo":"<frase com número>","insight_detalhe":"<1-2 frases>","projecao_atual":<n>,"projecao_mensal":<n>,"alertas":[{"tipo":"<red|amber|green>","titulo":"<curto>","texto":"<detalhe com R$>"}],"padroes":[{"tipo":"<red|amber|green>","titulo":"<titulo>","detalhe":"<detalhe>"}],"fixos":[{"nome":"<nome>","valor":<negativo>,"emoji":"<emoji>"}],"metas":[{"nome":"<meta>","pct":<0-100>,"cor":"<blue|green|amber>"}],"diagnostico_titulo":"<frase>","diagnostico_detalhe":"<detalhe>","rec_titulo":"<resumo>","rec_detalhe":"<3 ações sep. por · >"}
-Regras: máx 6 categorias, máx 15 transações, exatamente 3 alertas(1 red 1 amber 1 green), 3 padrões, 3 fixos, 2 metas.
+  const prompt = `Você é o motor de análise avançado do Grano, a mais sofisticada plataforma de gestão financeira comportamental do Brasil.
+Analise profundamente o extrato abaixo e retorne SOMENTE JSON válido (sem markdown, sem texto extra, sem comentários):
+{
+  "score":<0-1000>,
+  "score_titulo":"<Desorganizado|Controlado|Estruturado|Investidor>",
+  "score_desc":"<frase explicando o score com dado concreto>",
+  "total_gasto":<número positivo>,
+  "num_transacoes":<número>,
+  "ticket_medio":<número>,
+  "periodo":"<ex: Dezembro 2024>",
+  "categorias":[{"nome":"<categoria>","valor":<positivo>,"percentual":<0-100>}],
+  "transacoes":[{"nome":"<nome limpo>","categoria":"<categoria>","valor":<negativo>,"data":"<dd/mm>","emoji":"<emoji relevante>"}],
+  "insight_titulo":"<frase impactante com número concreto e comparação>",
+  "insight_detalhe":"<1-2 frases com dados específicos e percentuais reais>",
+  "projecao_atual":<valor já gasto>,
+  "projecao_mensal":<projeção para o mês completo baseada no ritmo>,
+  "alertas":[{"tipo":"<red|amber|green>","titulo":"<titulo curto e direto>","texto":"<detalhe específico com valor em R$ e impacto>"}],
+  "padroes":[{"tipo":"<red|amber|green>","titulo":"<titulo do padrão comportamental>","detalhe":"<explicação com dado quantitativo>"}],
+  "fixos":[{"nome":"<nome>","valor":<negativo>,"emoji":"<emoji>"}],
+  "metas":[{"nome":"<meta específica e mensurável>","pct":<0-100>,"cor":"<blue|green|amber>"}],
+  "diagnostico_titulo":"<frase de diagnóstico comportamental única e específica>",
+  "diagnostico_detalhe":"<2-3 frases com insights profundos sobre o comportamento financeiro>",
+  "rec_titulo":"<resumo quantificado das recomendações>",
+  "rec_detalhe":"<3-4 ações específicas separadas por · com valores estimados de economia>",
+  "dna_titulo":"<título criativo do perfil financeiro — ex: 'O Gastador Emocional de Fim de Semana'>",
+  "dna_desc":"<descrição em 2-3 frases do perfil comportamental único deste usuário>",
+  "dna_traits":["<traço 1>","<traço 2>","<traço 3>","<traço 4>"],
+  "preditivos":[{"urgencia":"<alta|media|baixa>","titulo":"<título do alerta preditivo>","texto":"<o que vai acontecer e quando>","dias":<dias até o evento>,"economia":"<valor que pode ser economizado>"}]
+}
+Regras obrigatórias:
+- Máximo 6 categorias, agrupando gastos similares
+- Máximo 15 transações ordenadas por valor decrescente
+- Exatamente 3 alertas: 1 red (urgente), 1 amber (atenção), 1 green (positivo)
+- Exatamente 3 padrões comportamentais identificados
+- 3 gastos fixos/recorrentes detectados
+- 2 metas inteligentes baseadas nos padrões
+- DNA financeiro: perfil único e personalizado baseado no comportamento real
+- Preditivos: 3 alertas preditivos com urgência alta/media/baixa
+- Todos os dados devem ser baseados no extrato real fornecido
 EXTRATO:\n${txt}`
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2500, messages:[{role:'user',content:prompt}] })
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,messages:[{role:'user',content:prompt}]})
     })
     const data = await r.json()
     const raw = (data.content?.[0]?.text||'').replace(/```json|```/g,'').trim()
-    appData = JSON.parse(raw)
+    D = JSON.parse(raw)
     isDemo = false
     document.getElementById('demo-badge').style.display = 'none'
-    // Salvar no Firebase
-    if (window._currentUser) {
-      window._fbSaveAnalysis?.(window._currentUser.uid, appData)
-      // Atualizar histórico local
-      window._history = [{ period: appData.periodo, score: appData.score, total_spent: appData.total_gasto, created_at: new Date().toISOString() }, ...(window._history||[])].slice(0,24)
-      renderHistory()
+    document.getElementById('insights-badge').style.display = 'inline'
+    // Save
+    if(window._user) {
+      window._fbSave?.(window._user.uid, D)
+      _history = [{period:D.periodo,score:D.score,total_spent:D.total_gasto,created_at:new Date().toISOString()},..._history].slice(0,24)
     } else {
-      // Salvar localStorage para demo
       const h = JSON.parse(localStorage.getItem('grano_hist')||'[]')
-      h.unshift({ period: appData.periodo, score: appData.score, total_spent: appData.total_gasto, created_at: new Date().toISOString() })
-      localStorage.setItem('grano_hist', JSON.stringify(h.slice(0,24)))
-      window._history = h.slice(0,24)
-      renderHistory()
+      h.unshift({period:D.periodo,score:D.score,total_spent:D.total_gasto,created_at:new Date().toISOString()})
+      localStorage.setItem('grano_hist',JSON.stringify(h.slice(0,24)))
+      _history = h.slice(0,24)
     }
+    renderHistory()
+    hideLoading()
+    renderAll(D)
+    document.getElementById('paste-area').value=''
+    toast(`Análise de ${D.periodo} concluída! Score: ${D.score}`, 'success', 4000)
   } catch(e) {
-    appData = demoData()
-    isDemo = true
+    hideLoading()
+    toast('Erro na análise. Usando dados demo.','error')
+    D = demoData(); isDemo = true
+    renderAll(D)
   }
-  hideLoading()
-  renderAll(appData)
-  document.getElementById('paste-area').value = ''
 }
 
-function showLoading() {
+function showLoading(){
   document.getElementById('loading').classList.add('show')
-  ;['ls1','ls2','ls3','ls4','ls5'].forEach(id => document.getElementById(id).classList.remove('done'))
-  document.getElementById('lb').style.width = '0%'
+  ;['ls1','ls2','ls3','ls4','ls5'].forEach(id=>document.getElementById(id).classList.remove('done'))
+  document.getElementById('lb').style.width='0%'
 }
-function hideLoading() { document.getElementById('loading').classList.remove('show') }
+function hideLoading(){ document.getElementById('loading').classList.remove('show') }
 
-// ── UTILS ──
-const brl = n => 'R$ ' + Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})
-const brlS = n => 'R$ ' + Math.round(Math.abs(n)).toLocaleString('pt-BR')
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+const brl = n => 'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})
+const brlS = n => 'R$ '+Math.round(Math.abs(n)).toLocaleString('pt-BR')
 const AC = {red:'var(--red)',amber:'var(--amber)',green:'var(--green)'}
 const MC = {blue:'var(--blue)',green:'var(--green)',amber:'var(--amber)'}
-const CB = {compras:'#FFF7ED',online:'#FFF7ED',delivery:'#FEFCE8','alimentação':'#F0FDF4',restaurante:'#F0FDF4',transporte:'#EFF6FF',assinatura:'#FAF5FF',supermercado:'#F0FDFA','saúde':'#FFF1F2','farmácia':'#FFF1F2',lazer:'#F5F3FF'}
-const CE = {compras:'🛍️',online:'🛍️',delivery:'🛵','alimentação':'🍽️',restaurante:'🍽️',transporte:'🚗',supermercado:'🛒','saúde':'💊','farmácia':'💊',academia:'💪',assinatura:'📺',streaming:'📺',lazer:'🎬','combustível':'⛽',pet:'🐾'}
-const catBg = c => { const k=Object.keys(CB).find(k=>c.toLowerCase().includes(k)); return k?CB[k]:'#F9FAFB' }
-const catEm = c => { const k=Object.keys(CE).find(k=>c.toLowerCase().includes(k)); return k?CE[k]:'📌' }
-function animN(id, to, dur) {
-  const el=document.getElementById(id); if(!el) return
+const CB = {compras:'#FFF7ED',online:'#FFF7ED',delivery:'#FEFCE8','alimentação':'#F0FDF4',restaurante:'#F0FDF4',transporte:'#EFF6FF',assinatura:'#FAF5FF',supermercado:'#F0FDFA','saúde':'#FFF1F2','farmácia':'#FFF1F2',lazer:'#F5F3FF',educação:'#F0F9FF'}
+const CE = {compras:'🛍️',online:'🛍️',delivery:'🛵','alimentação':'🍽️',restaurante:'🍽️',transporte:'🚗',supermercado:'🛒','saúde':'💊','farmácia':'💊',academia:'💪',assinatura:'📺',streaming:'📺',lazer:'🎬','combustível':'⛽',pet:'🐾',educação:'📚'}
+const catBg = c => {const k=Object.keys(CB).find(k=>c.toLowerCase().includes(k));return k?CB[k]:'#F9FAFB'}
+const catEm = c => {const k=Object.keys(CE).find(k=>c.toLowerCase().includes(k));return k?CE[k]:'📌'}
+
+function animN(id,to,dur=1000){
+  const el=document.getElementById(id);if(!el)return
   const s=performance.now()
-  const tick = now => { const t=Math.min((now-s)/dur,1),e=1-Math.pow(1-t,3); el.textContent=Math.round(to*e); if(t<1)requestAnimationFrame(tick) }
+  const tick=now=>{const t=Math.min((now-s)/dur,1),e=1-Math.pow(1-t,3);el.textContent=Math.round(to*e);if(t<1)requestAnimationFrame(tick)}
   requestAnimationFrame(tick)
 }
-function txRows(txs) {
-  return txs.map(t=>`<tr>
+
+function txRows(txs, max=999) {
+  return txs.slice(0,max).map(t=>`<tr>
     <td><span style="font-size:15px;margin-right:7px">${t.emoji||catEm(t.categoria)}</span><span class="txn">${t.nome}</span></td>
-    <td><span class="badge b-blue">${t.categoria}</span></td>
+    <td><span class="badge b-blue" style="cursor:pointer" onclick="filterByCategory('${t.categoria}')">${t.categoria}</span></td>
     <td class="txd">${t.data}</td>
     <td class="txa">${brl(t.valor)}</td>
   </tr>`).join('')
 }
-function catItems(cats) {
+
+function catItems(cats, containerId) {
   const maxV = Math.max(...cats.map(c=>c.valor))
   return cats.map(c=>`
-    <div class="ci">
+    <div class="ci" onclick="filterByCategory('${c.nome}');navTo('transacoes')">
       <div class="cico" style="background:${catBg(c.nome)}">${catEm(c.nome)}</div>
       <div style="flex:1;min-width:0">
         <div class="cn">${c.nome}</div>
         <div class="bw"><div class="bf" style="width:0%" data-w="${(c.valor/maxV*100).toFixed(0)}%"></div></div>
       </div>
-      <div><div class="cv">${brl(c.valor)}</div><div class="cp">${c.percentual.toFixed(0)}%</div></div>
+      <div><div class="cv">${brl(c.valor)}</div><div class="cpct">${c.percentual.toFixed(0)}%</div></div>
     </div>`).join('')
 }
 
-// ── RENDER ──
+// ═══════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════
 function renderAll(d) {
-  renderDash(d); renderTx(d); renderFluxo(d)
+  if(!d) return
+  renderDash(d); renderTxs(d); renderFluxo(d)
   renderCats(d); renderInsights(d); renderMetas(d)
 }
 
@@ -858,38 +1280,64 @@ function renderDash(d) {
   document.getElementById('ib-title').textContent = d.insight_titulo
   document.getElementById('ib-det').textContent = d.insight_detalhe
   document.getElementById('k-total').textContent = brlS(d.total_gasto)
-  document.getElementById('k-per').innerHTML = d.periodo + ' <span class="badge b-red">↑ 12%</span>'
-  animN('k-score', d.score, 900)
-  document.getElementById('k-nivel').textContent = 'Nível: ' + d.score_titulo
+  document.getElementById('k-per').innerHTML = d.periodo+' <span class="badge b-red">↑ 12%</span>'
+  animN('k-score', d.score)
+  document.getElementById('k-nivel').textContent = 'Nível: '+d.score_titulo
   document.getElementById('k-txns').textContent = d.num_transacoes
   document.getElementById('k-avg').textContent = brlS(d.ticket_medio)
   document.getElementById('k-proj').textContent = brlS(d.projecao_mensal)
+  // Projeção
   document.getElementById('d-pnow').textContent = brlS(d.projecao_atual)
   document.getElementById('d-ptot').textContent = brlS(d.projecao_mensal)
   const pct = Math.min(Math.round(d.projecao_atual/d.projecao_mensal*100),100)
   setTimeout(()=>document.getElementById('d-pbar').style.width=pct+'%',100)
-  document.getElementById('d-pnote').textContent = pct+'% do mês consumido'
+  document.getElementById('d-pnote').textContent = pct+'% do orçamento mensal consumido'
+  // Alertas
   document.getElementById('alert-count').textContent = d.alertas.length
   document.getElementById('d-alerts').innerHTML = d.alertas.map(a=>`
     <div class="ai"><div class="ad" style="background:${AC[a.tipo]}"></div>
     <div><div class="at">${a.titulo}</div><div class="ax">${a.texto}</div></div></div>`).join('')
+  // Cats
   document.getElementById('d-cats').innerHTML = catItems(d.categorias)
-  const c = 289.03
+  // Score
+  const circ=289.03
   setTimeout(()=>{
-    document.getElementById('srf').style.strokeDashoffset = c-(d.score/1000*c)
+    document.getElementById('srf').style.strokeDashoffset = circ-(d.score/1000*circ)
     document.getElementById('d-lbar').style.width = (d.score/10)+'%'
-  },120)
-  animN('d-snum', d.score, 1100)
+  },150)
+  animN('d-snum',d.score,1100)
   document.getElementById('d-slevel').textContent = d.score_titulo
   document.getElementById('d-sdesc').textContent = d.score_desc
-  document.querySelector('#d-txs tbody').innerHTML = txRows(d.transacoes.slice(0,6))
-  setTimeout(()=>document.querySelectorAll('#d-cats .bf').forEach(b=>b.style.width=b.dataset.w),150)
+  // Txs recentes
+  document.querySelector('#d-txs tbody').innerHTML = txRows(d.transacoes,6)
+  setTimeout(()=>document.querySelectorAll('#d-cats .bf').forEach(b=>b.style.width=b.dataset.w),200)
 }
 
-function renderTx(d) {
+function renderTxs(d) {
   document.getElementById('tx-sub').textContent = d.num_transacoes+' lançamentos · '+d.periodo
-  document.querySelector('#all-txs tbody').innerHTML = txRows(d.transacoes)
+  // Build filter chips
+  const cats = [...new Set(d.transacoes.map(t=>t.categoria))]
+  document.getElementById('cat-chips').innerHTML = cats.map(c=>`
+    <span class="filter-chip ${activeFilters.has(c)?'active':''}" onclick="toggleFilter('${c}')">${catEm(c)} ${c}${activeFilters.has(c)?'<span class="x">✕</span>':''}</span>`).join('')
+  // Render
+  let txs = [...d.transacoes]
+  if(activeFilters.size) txs = txs.filter(t=>activeFilters.has(t.categoria))
+  if(sortMode==='data') txs.sort((a,b)=>a.data.localeCompare(b.data))
+  else if(sortMode==='nome') txs.sort((a,b)=>a.nome.localeCompare(b.nome))
+  else txs.sort((a,b)=>Math.abs(b.valor)-Math.abs(a.valor))
+  document.querySelector('#all-txs tbody').innerHTML = txRows(txs)
 }
+
+function toggleFilter(cat) {
+  if(activeFilters.has(cat)) activeFilters.delete(cat)
+  else activeFilters.add(cat)
+  if(D) renderTxs(D)
+}
+function filterByCategory(cat) {
+  activeFilters.clear(); activeFilters.add(cat)
+  if(D) renderTxs(D)
+}
+function sortTx(mode) { sortMode=mode; if(D) renderTxs(D) }
 
 function renderFluxo(d) {
   document.getElementById('f-proj').textContent = brlS(d.projecao_mensal)
@@ -898,91 +1346,386 @@ function renderFluxo(d) {
   document.getElementById('f-ptot').textContent = brlS(d.projecao_mensal)
   const fixTot = (d.fixos||[]).reduce((s,f)=>s+Math.abs(f.valor),0)
   document.getElementById('f-ftot').textContent = brlS(fixTot)
-  document.getElementById('f-fcount').textContent = (d.fixos||[]).length+' recorrentes'
+  document.getElementById('f-fcnt').textContent = (d.fixos||[]).length+' recorrentes'
   const pct = Math.min(Math.round(d.projecao_atual/d.projecao_mensal*100),100)
-  document.getElementById('f-pct').textContent = pct+'% do mês'
+  document.getElementById('f-pct').textContent = pct+'% do mês consumido'
   setTimeout(()=>document.getElementById('f-pbar').style.width=pct+'%',100)
-  document.getElementById('f-pnote').textContent = pct+'% consumido'
-  const diario = Math.round((d.projecao_mensal - d.projecao_atual) / 20)
-  document.getElementById('f-tip').innerHTML = `Para fechar no zero, limite <strong>R$ ${diario}/dia</strong> até o fim do mês.`
+  document.getElementById('f-pnote').textContent = pct+'% consumido · '+((100-pct))+'% restante'
+  const diario = Math.max(0,Math.round((d.projecao_mensal-d.projecao_atual)/20))
+  document.getElementById('f-tip').innerHTML = `Para não estourar, limite <strong>R$ ${diario}/dia</strong> até o fim do mês.`
   document.getElementById('f-fixos').innerHTML = (d.fixos||[]).map(f=>`
-    <div class="fi">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--ink5);transition:background 0.1s" onmouseover="this.style.background='var(--ink6)'" onmouseout="this.style.background='transparent'">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:30px;height:30px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px">${f.emoji}</div>
-        <div><div style="font-size:12px;font-weight:600;color:var(--ink)">${f.nome}</div><div style="font-size:10px;color:var(--ink4)">Recorrente mensal</div></div>
+        <div><div style="font-size:12px;font-weight:600;color:var(--ink)">${f.nome}</div><div style="font-size:10px;color:var(--ink4)">Recorrente detectado</div></div>
       </div>
       <div style="font-size:12px;font-weight:700;color:var(--red)">${brl(f.valor)}</div>
     </div>`).join('')
 }
 
 function renderCats(d) {
-  document.getElementById('cat-full').innerHTML = catItems(d.categorias)
+  document.getElementById('cat-full').innerHTML = catItems(d.categorias,'cat-full')
   document.querySelector('#cat-txs tbody').innerHTML = txRows(d.transacoes)
-  setTimeout(()=>document.querySelectorAll('#cat-full .bf').forEach(b=>b.style.width=b.dataset.w),150)
+  setTimeout(()=>document.querySelectorAll('#cat-full .bf').forEach(b=>b.style.width=b.dataset.w),200)
+  if(d.padroes?.length) {
+    document.getElementById('cat-comparativo').innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:3px">📊 Análise de comportamento</div><div style="font-size:12px;color:var(--ink2)">${d.insight_titulo}</div>`
+    document.getElementById('cat-insight').textContent = d.diagnostico_detalhe || d.insight_detalhe
+  }
 }
 
 function renderInsights(d) {
-  document.getElementById('ins-title').textContent = d.diagnostico_titulo||d.insight_titulo
-  document.getElementById('ins-det').textContent = d.diagnostico_detalhe||d.insight_detalhe
-  document.getElementById('ins-rtitle').textContent = d.rec_titulo||'Recomendações'
-  document.getElementById('ins-rdet').innerHTML = (d.rec_detalhe||'').split(' · ').map(r=>`<div>• ${r}</div>`).join('')
-  document.getElementById('ins-snote').textContent = `Com as ações implementadas por 2 meses, seu score sobe de ${d.score} para ~${d.score+100}, avançando para o próximo nível.`
+  // DNA
+  document.getElementById('dna-wrap').innerHTML = d.dna_titulo ? `
+    <div class="dna-card">
+      <div class="dna-tag">🧬 Seu DNA Financeiro</div>
+      <div class="dna-title">${d.dna_titulo}</div>
+      <div class="dna-desc">${d.dna_desc}</div>
+      <div class="dna-traits">${(d.dna_traits||[]).map(t=>`<span class="dna-trait">${t}</span>`).join('')}</div>
+    </div>` : ''
+  document.getElementById('patterns-count').textContent = (d.padroes||[]).length
   document.getElementById('ins-patterns').innerHTML = (d.padroes||[]).map(p=>`
     <div class="pi"><div class="pl2" style="background:${AC[p.tipo]}"></div>
     <div><div class="pt2">${p.titulo}</div><div class="pd">${p.detalhe}</div></div></div>`).join('')
+  document.getElementById('ins-rtitle').textContent = d.rec_titulo||'Recomendações'
+  document.getElementById('ins-rdet').innerHTML = (d.rec_detalhe||'').split(' · ').map(r=>`<div style="margin-bottom:4px">• ${r}</div>`).join('')
+  document.getElementById('ins-snote').textContent = d.score < 1000 ? `Com as ações implementadas por 2 meses, seu score sobe de ${d.score} para ~${d.score+100}, avançando para ${d.score_titulo==='Controlado'?'Estruturado':'o próximo nível'}.` : 'Você atingiu o nível máximo! Continue assim.'
+  document.getElementById('insights-badge').style.display = 'none'
 }
 
 function renderMetas(d) {
   document.getElementById('metas-list').innerHTML = (d.metas||[]).map(m=>`
-    <div class="mi"><div class="mh"><div class="mn">${m.nome}</div><div class="mp" style="color:${MC[m.cor]}">${m.pct}%</div></div>
-    <div class="mt"><div class="mf" style="width:0%;background:${MC[m.cor]}" data-w="${m.pct}%"></div></div></div>`).join('')
+    <div class="mi"><div class="mih"><div class="min">${m.nome}</div><div class="mip" style="color:${MC[m.cor]}">${m.pct}%</div></div>
+    <div class="mit"><div class="mif" style="width:0%;background:${MC[m.cor]}" data-w="${m.pct}%"></div></div></div>`).join('')
+  const lvls=['lvl-0','lvl-1','lvl-2','lvl-3']
+  const li = d.score<250?0:d.score<500?1:d.score<750?2:3
+  lvls.forEach((id,i)=>{
+    const el=document.getElementById(id)
+    if(i===li){el.style.background='var(--blue-l)';el.style.border='1px solid rgba(27,58,107,0.15)';el.querySelector('div').style.color='var(--blue)';el.querySelector('div:last-child').style.color='var(--blue)';el.querySelector('div').style.fontWeight='700'}
+    else{el.style.background='var(--bg)';el.style.border='1px solid var(--ink5)';el.querySelectorAll('div').forEach(d=>d.style.color='var(--ink4)')}
+  })
   document.getElementById('meta-pts').textContent = d.score+' pts'
-  const nn = d.score_titulo==='Desorganizado'?'Controlado':d.score_titulo==='Controlado'?'Estruturado':'Investidor'
-  const np = d.score_titulo==='Desorganizado'?250:d.score_titulo==='Controlado'?500:d.score_titulo==='Estruturado'?750:1000
-  document.getElementById('meta-next').textContent = `faltam ${np-d.score} pts → ${nn}`
+  const np = d.score<250?250:d.score<500?500:d.score<750?750:1000
+  const nn = d.score<250?'Controlado':d.score<500?'Estruturado':d.score<750?'Investidor':'Nível máximo'
+  document.getElementById('meta-next').textContent = d.score>=1000 ? '🏆 Nível máximo!' : `faltam ${np-d.score} pts → ${nn}`
   setTimeout(()=>{
-    document.querySelectorAll('.mf').forEach(b=>b.style.width=b.dataset.w)
-    document.getElementById('meta-lbar').style.width = (d.score/10)+'%'
+    document.querySelectorAll('.mif').forEach(b=>b.style.width=b.dataset.w)
+    document.getElementById('meta-lbar').style.width=(d.score/10)+'%'
   },150)
 }
 
+function renderComparativo() {
+  if(!_history||_history.length<2){return}
+  // Show basic comparison from history
+  const curr = _history[0], prev = _history[1]
+  const delta = curr.total_spent - prev.total_spent
+  const pct = prev.total_spent > 0 ? ((delta/prev.total_spent)*100).toFixed(1) : 0
+  document.getElementById('cmp-content').innerHTML = `
+    <div style="padding:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div style="background:var(--bg);border-radius:var(--r2);padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">${prev.period}</div>
+          <div style="font-size:24px;font-weight:800;color:var(--ink)">${brlS(prev.total_spent)}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Score: ${prev.score}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r2);padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">${curr.period}</div>
+          <div style="font-size:24px;font-weight:800;color:${delta>0?'var(--red)':'var(--green)'}">${brlS(curr.total_spent)}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Score: ${curr.score}</div>
+        </div>
+      </div>
+      <div style="background:${delta>0?'var(--red-l)':'var(--green-l)'};border:1px solid ${delta>0?'rgba(224,49,49,0.2)':'rgba(0,184,122,0.2)'};border-radius:var(--r);padding:14px;text-align:center">
+        <div style="font-size:14px;font-weight:700;color:${delta>0?'var(--red)':'var(--green)'}">${delta>0?'↑':'↓'} ${Math.abs(pct)}% ${delta>0?'a mais':'a menos'} que o mês anterior</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:4px">${delta>0?`Você gastou ${brlS(Math.abs(delta))} a mais.`:`Você economizou ${brlS(Math.abs(delta))}. Ótimo trabalho!`}</div>
+      </div>
+    </div>`
+}
+
+function renderPreditivo() {
+  if(!D?.preditivos?.length){return}
+  const urgColors = {alta:'var(--red)',media:'var(--amber)',baixa:'var(--green)'}
+  const urgBg = {alta:'var(--red-l)',media:'var(--amber-l)',baixa:'var(--green-l)'}
+  document.getElementById('pred-alerts').innerHTML = D.preditivos.map(p=>`
+    <div class="pred-alert" style="background:${urgBg[p.urgencia]};border-color:${urgColors[p.urgencia]}22">
+      <div class="pred-icon">${p.urgencia==='alta'?'🚨':p.urgencia==='media'?'⚠️':'💡'}</div>
+      <div style="flex:1">
+        <div class="pred-title" style="color:${urgColors[p.urgencia]}">${p.titulo}</div>
+        <div class="pred-text">${p.texto}</div>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          ${p.dias?`<span class="pred-days" style="background:${urgColors[p.urgencia]}22;color:${urgColors[p.urgencia]}">em ${p.dias} dias</span>`:''}
+          ${p.economia?`<span class="pred-days" style="background:var(--green-l);color:var(--green2)">economize ${p.economia}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('')
+}
+
 window.renderHistory = function() {
-  const h = window._history || []
-  document.getElementById('hist-sub').textContent = h.length+' meses analisados'
-  if (!h.length) return
-  document.getElementById('hist-list').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 60px 100px 90px;padding:9px 16px;background:var(--bg);border-bottom:1px solid var(--ink5)">
+  const h = _history||[]
+  document.getElementById('hist-sub').textContent = h.length+' meses'
+  if(!h.length)return
+  document.getElementById('hist-list').innerHTML =
+    `<div style="display:grid;grid-template-columns:1fr 60px 100px 90px;padding:9px 16px;background:var(--ink6);border-bottom:1px solid var(--ink5)">
       <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em">Período</div>
       <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;text-align:right">Score</div>
       <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;text-align:right">Total gasto</div>
       <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;text-align:right">Importado em</div>
-    </div>
-    ${h.map(x=>`
-    <div style="display:grid;grid-template-columns:1fr 60px 100px 90px;padding:12px 16px;border-bottom:1px solid var(--ink5);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+    </div>`+
+    h.map(x=>`
+    <div class="hist-row">
       <div style="font-size:13px;font-weight:600;color:var(--ink)">${x.period}</div>
       <div style="font-size:13px;font-weight:700;color:var(--blue);text-align:right">${x.score}</div>
       <div style="font-size:13px;font-weight:700;color:var(--red);text-align:right">${brlS(x.total_spent)}</div>
       <div style="font-size:11px;color:var(--ink4);text-align:right">${new Date(x.created_at).toLocaleDateString('pt-BR')}</div>
-    </div>`).join('')}`
+    </div>`).join('')
 }
 
-// ── DEMO DATA ──
-function demoData() {
-  return {
-    score:420,score_titulo:'Controlado',score_desc:'Consciência presente, mas padrões de consumo ainda comprometem a acumulação de patrimônio.',
-    total_gasto:1167.20,num_transacoes:12,ticket_medio:97.27,periodo:'Dezembro 2024',
-    categorias:[{nome:'Compras Online',valor:234.50,percentual:20.1},{nome:'Alimentação & Delivery',valor:204.10,percentual:17.5},{nome:'Transporte',valor:203.50,percentual:17.4},{nome:'Supermercado',valor:187.40,percentual:16.1},{nome:'Assinaturas',valor:180.50,percentual:15.5},{nome:'Saúde',valor:157.20,percentual:13.5}],
-    transacoes:[{nome:'Amazon',categoria:'Compras Online',valor:-234.50,data:'03/12',emoji:'📦'},{nome:'Supermercado Extra',categoria:'Supermercado',valor:-187.40,data:'02/12',emoji:'🛒'},{nome:'Posto Combustível',categoria:'Transporte',valor:-180.00,data:'05/12',emoji:'⛽'},{nome:'Netflix & Spotify',categoria:'Assinaturas',valor:-134.80,data:'01/12',emoji:'📺'},{nome:'Restaurante',categoria:'Alimentação',valor:-134.00,data:'04/12',emoji:'🍽️'},{nome:'Academia',categoria:'Saúde',valor:-89.90,data:'01/12',emoji:'💪'},{nome:'Uber Eats',categoria:'Alimentação',valor:-67.80,data:'06/12',emoji:'🛵'},{nome:'Farmácia',categoria:'Saúde',valor:-67.30,data:'06/12',emoji:'💊'},{nome:'Rappi',categoria:'Alimentação',valor:-52.40,data:'07/12',emoji:'🛵'},{nome:'iFood',categoria:'Alimentação',valor:-45.90,data:'01/12',emoji:'🛵'},{nome:'iFood',categoria:'Alimentação',valor:-38.90,data:'05/12',emoji:'🛵'},{nome:'Uber',categoria:'Transporte',valor:-23.50,data:'02/12',emoji:'🚗'}],
-    insight_titulo:'Delivery consumiu o mesmo que saúde em dezembro',insight_detalhe:'R$ 204 em 12 pedidos. Cozinhar 3x por semana economizaria R$ 120/mês.',
-    projecao_atual:1167.20,projecao_mensal:2800,
-    diagnostico_titulo:'Você consome mais após receber salário.',diagnostico_detalhe:'Gastos sobem 38% na semana seguinte ao recebimento. Fins de semana concentram 45% dos gastos em lazer.',
-    alertas:[{tipo:'red',titulo:'Delivery acima do limite',texto:'No ritmo atual, delivery vai custar R$ 880 este mês — 31% do total projetado.'},{tipo:'amber',titulo:'Compras sem categoria',texto:'Amazon R$ 234,50 sem classificação. Verifique assinaturas ou compras por impulso.'},{tipo:'green',titulo:'Saúde mantida',texto:'Academia e farmácia presentes. Você investe em prevenção.'}],
-    padroes:[{tipo:'amber',titulo:'Gasto pós-salário elevado',detalhe:'Seus gastos sobem 38% na semana seguinte ao recebimento do salário.'},{tipo:'red',titulo:'Gatilho fim de semana',detalhe:'Sáb e Dom concentram 45% dos gastos em lazer e delivery do mês.'},{tipo:'green',titulo:'Consistência em saúde',detalhe:'Academia e farmácia presentes há 3 meses consecutivos.'}],
-    fixos:[{nome:'Netflix & Spotify',valor:-134.80,emoji:'📺'},{nome:'Academia',valor:-89.90,emoji:'💪'},{nome:'Seguro Auto',valor:-120.00,emoji:'🚗'}],
-    metas:[{nome:'Reduzir delivery em 30%',pct:42,cor:'amber'},{nome:'Consistência 30 dias',pct:26,cor:'blue'}],
-    rec_titulo:'3 ações para economizar R$ 340 este mês',rec_detalhe:'Reduzir delivery nas sextas-feiras · Revisar assinaturas ativas · Planejar compras online com lista prévia'
+// ═══════════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════════
+function globalSearch(q) {
+  if(!q.trim()||!D){return}
+  if(q.length<2) return
+  const results = D.transacoes.filter(t=>
+    t.nome.toLowerCase().includes(q.toLowerCase()) ||
+    t.categoria.toLowerCase().includes(q.toLowerCase())
+  )
+  if(results.length){
+    navTo('transacoes')
+    document.querySelector('#all-txs tbody').innerHTML = txRows(results)
+    document.getElementById('tx-sub').textContent = results.length+' resultado(s) para "'+q+'"'
   }
 }
+
+// ═══════════════════════════════════════
+// CHAT WITH AI
+// ═══════════════════════════════════════
+function openChatModal() {
+  document.getElementById('chat-modal').classList.add('open')
+  if(chatHistory.length===0) initChat()
+}
+function closeChatModal() { document.getElementById('chat-modal').classList.remove('open') }
+
+function initChat() {
+  const sugs = [
+    'Por que gastei tanto esse mês?',
+    'Onde posso economizar?',
+    'Qual meu maior problema financeiro?',
+    'Como melhorar meu score?',
+    'Quais são meus gastos desnecessários?'
+  ]
+  document.getElementById('chat-sugs').innerHTML = sugs.map(s=>`
+    <span class="chat-sug" onclick="sendChatMsg('${s}')">${s}</span>`).join('')
+
+  const welcome = D ?
+    `Olá! Sou a IA do Grano. Analisei seus dados de **${D.periodo}** e estou pronto para responder qualquer pergunta sobre seus gastos. O que você quer saber?` :
+    `Olá! Sou a IA do Grano. Importe um extrato para que eu possa analisar seus dados e responder perguntas personalizadas. Por enquanto, posso responder perguntas gerais sobre finanças.`
+
+  addChatMsg('ai', welcome)
+}
+
+function addChatMsg(role, text) {
+  const msgs = document.getElementById('chat-msgs')
+  const div = document.createElement('div')
+  div.className = `msg ${role}`
+  if(role==='ai') div.innerHTML = `<div class="msg-tag">Grano IA</div>${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}`
+  else div.textContent = text
+  msgs.appendChild(div)
+  msgs.scrollTop = msgs.scrollHeight
+  chatHistory.push({role:role==='ai'?'assistant':'user',content:text})
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-msgs')
+  const div = document.createElement('div')
+  div.className = 'chat-typing'
+  div.id = 'typing-indicator'
+  div.innerHTML = '<span></span><span></span><span></span>'
+  msgs.appendChild(div)
+  msgs.scrollTop = msgs.scrollHeight
+}
+
+function hideTyping() {
+  document.getElementById('typing-indicator')?.remove()
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input')
+  const msg = input.value.trim()
+  if(!msg) return
+  input.value = ''
+  sendChatMsg(msg)
+}
+
+async function sendChatMsg(msg) {
+  addChatMsg('user', msg)
+  document.getElementById('chat-sugs').innerHTML = ''
+  showTyping()
+
+  const context = D ? `
+DADOS FINANCEIROS DO USUÁRIO (${D.periodo}):
+- Total gasto: ${brl(D.total_gasto)}
+- Score: ${D.score}/1000 (${D.score_titulo})
+- Categorias: ${D.categorias.map(c=>c.nome+' R$'+c.valor.toFixed(0)).join(', ')}
+- DNA: ${D.dna_titulo||'N/A'}
+- Padrões: ${D.padroes?.map(p=>p.titulo).join('; ')||'N/A'}
+- Projeção mensal: ${brl(D.projecao_mensal)}
+- Fixos: ${D.fixos?.map(f=>f.nome).join(', ')||'N/A'}
+` : 'Nenhum dado importado ainda.'
+
+  const systemPrompt = `Você é a IA financeira do Grano, plataforma de gestão financeira comportamental. 
+Você é direto, empático e especialista em finanças pessoais comportamentais.
+Responda em português brasileiro, de forma conversacional mas precisa.
+Use os dados do usuário para personalizar cada resposta.
+Seja específico com números quando disponíveis. Máximo 3 parágrafos.
+${context}`
+
+  try {
+    const messages = chatHistory.slice(-8).map(m=>({role:m.role,content:m.content}))
+    messages.push({role:'user',content:msg})
+
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        system:systemPrompt,
+        messages
+      })
+    })
+    const data = await r.json()
+    const reply = data.content?.[0]?.text || 'Desculpe, não consegui processar sua pergunta.'
+    hideTyping()
+    addChatMsg('ai', reply)
+  } catch(e) {
+    hideTyping()
+    addChatMsg('ai', 'Desculpe, houve um erro ao processar sua pergunta. Tente novamente.')
+  }
+}
+
+// ═══════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════
+function exportCSV() {
+  if(!D){toast('Sem dados para exportar.','error');return}
+  const rows = [['Nome','Categoria','Valor','Data']]
+  D.transacoes.forEach(t=>rows.push([t.nome,t.categoria,t.valor,t.data]))
+  const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n')
+  const a = document.createElement('a')
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv)
+  a.download = `grano_${D.periodo.replace(' ','_')}.csv`
+  a.click()
+  toast('CSV exportado com sucesso!','success')
+}
+
+function exportAllData() {
+  if(!D){toast('Sem dados para exportar.','error');return}
+  const json = JSON.stringify({data:D,history:_history,exportedAt:new Date().toISOString()},null,2)
+  const a = document.createElement('a')
+  a.href = 'data:application/json;charset=utf-8,'+encodeURIComponent(json)
+  a.download = 'grano_backup.json'
+  a.click()
+  toast('Dados exportados!','success')
+}
+
+function generatePDF() {
+  if(!D){toast('Importe um extrato primeiro.','error');return}
+  document.getElementById('pdf-btn').textContent = '⏳ Gerando...'
+
+  const content = `
+    <html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;padding:40px;color:#111827;max-width:800px;margin:0 auto}
+      h1{color:#1B3A6B;font-size:28px;margin-bottom:4px}
+      h2{color:#1B3A6B;font-size:18px;margin:28px 0 12px;border-bottom:2px solid #EEF2FF;padding-bottom:6px}
+      .meta{color:#6B7280;font-size:13px;margin-bottom:32px}
+      .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+      .kpi{background:#F4F5F9;border-radius:8px;padding:16px}
+      .kpi-label{font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px}
+      .kpi-val{font-size:22px;font-weight:800;color:#E03131}
+      .kpi-val.blue{color:#1B3A6B}.kpi-val.green{color:#00B87A}
+      .dna{background:#1B3A6B;color:white;border-radius:10px;padding:20px;margin-bottom:24px}
+      .dna h3{color:#00B87A;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+      .dna h2{color:white;border:none;margin:0 0 8px;font-size:20px}
+      .dna p{color:rgba(255,255,255,0.7);font-size:13px;margin:0}
+      .cat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E7EB}
+      .alert{padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:12px}
+      .alert.red{background:#FFF0F0;border-left:3px solid #E03131}
+      .alert.amber{background:#FFFBEB;border-left:3px solid #D97706}
+      .alert.green{background:#E6F7F2;border-left:3px solid #00B87A}
+      .alert strong{display:block;margin-bottom:2px}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th{background:#F4F5F9;padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#6B7280}
+      td{padding:8px;border-bottom:1px solid #E5E7EB}
+      .footer{margin-top:40px;text-align:center;font-size:11px;color:#9CA3AF}
+      @media print{body{padding:20px}}
+    </style></head><body>
+    <h1>Grano. — Relatório Financeiro</h1>
+    <div class="meta">Período: ${D.periodo} · Gerado em ${new Date().toLocaleDateString('pt-BR')} · Score: ${D.score}/1000</div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Total de gastos</div><div class="kpi-val">${brlS(D.total_gasto)}</div></div>
+      <div class="kpi"><div class="kpi-label">Score financeiro</div><div class="kpi-val blue">${D.score} — ${D.score_titulo}</div></div>
+      <div class="kpi"><div class="kpi-label">Projeção mensal</div><div class="kpi-val">${brlS(D.projecao_mensal)}</div></div>
+    </div>
+
+    ${D.dna_titulo?`<div class="dna"><h3>🧬 DNA Financeiro</h3><h2>${D.dna_titulo}</h2><p>${D.dna_desc}</p></div>`:''}
+
+    <h2>Diagnóstico</h2>
+    <p><strong>${D.diagnostico_titulo}</strong></p>
+    <p style="color:#374151;font-size:13px;line-height:1.6;margin-top:8px">${D.diagnostico_detalhe}</p>
+
+    <h2>Gastos por categoria</h2>
+    ${D.categorias.map(c=>`<div class="cat-row"><span>${catEm(c.nome)} ${c.nome}</span><span><strong>${brl(c.valor)}</strong> · ${c.percentual.toFixed(0)}%</span></div>`).join('')}
+
+    <h2>Alertas inteligentes</h2>
+    ${D.alertas.map(a=>`<div class="alert ${a.tipo}"><strong>${a.titulo}</strong>${a.texto}</div>`).join('')}
+
+    <h2>Recomendações da IA</h2>
+    <p style="font-weight:700;color:#1B3A6B">${D.rec_titulo}</p>
+    ${D.rec_detalhe.split(' · ').map(r=>`<p style="font-size:13px;color:#374151;margin:6px 0">• ${r}</p>`).join('')}
+
+    <h2>Todas as transações</h2>
+    <table><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Valor</th></tr></thead>
+    <tbody>${D.transacoes.map(t=>`<tr><td>${t.nome}</td><td>${t.categoria}</td><td>${t.data}</td><td style="color:#E03131;font-weight:600">${brl(t.valor)}</td></tr>`).join('')}</tbody></table>
+
+    <div class="footer">Gerado pelo Grano — Gestão Financeira Inteligente · grano.com.br</div>
+    </body></html>`
+
+  const w = window.open('','_blank')
+  w.document.write(content)
+  w.document.close()
+  setTimeout(()=>{w.print();},500)
+
+  document.getElementById('pdf-btn').innerHTML = '📄 Gerar relatório PDF'
+  document.getElementById('pdf-prev-title').textContent = `Relatório ${D.periodo} pronto`
+  document.getElementById('pdf-prev-sub').textContent = `Score ${D.score} · ${D.num_transacoes} transações · ${brlS(D.total_gasto)}`
+  toast('Relatório PDF gerado!','success')
+}
+
+// ═══════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════
+function demoData(){return{
+  score:420,score_titulo:'Controlado',score_desc:'Consciência presente, mas padrões de consumo impulsivo comprometem a acumulação de patrimônio.',
+  total_gasto:1167.20,num_transacoes:12,ticket_medio:97.27,periodo:'Dezembro 2024',
+  categorias:[{nome:'Compras Online',valor:234.50,percentual:20.1},{nome:'Alimentação & Delivery',valor:204.10,percentual:17.5},{nome:'Transporte',valor:203.50,percentual:17.4},{nome:'Supermercado',valor:187.40,percentual:16.1},{nome:'Assinaturas',valor:180.50,percentual:15.5},{nome:'Saúde',valor:157.20,percentual:13.5}],
+  transacoes:[{nome:'Amazon',categoria:'Compras Online',valor:-234.50,data:'03/12',emoji:'📦'},{nome:'Supermercado Extra',categoria:'Supermercado',valor:-187.40,data:'02/12',emoji:'🛒'},{nome:'Posto Combustível',categoria:'Transporte',valor:-180.00,data:'05/12',emoji:'⛽'},{nome:'Netflix & Spotify',categoria:'Assinaturas',valor:-134.80,data:'01/12',emoji:'📺'},{nome:'Restaurante Almoço',categoria:'Alimentação',valor:-134.00,data:'04/12',emoji:'🍽️'},{nome:'Academia',categoria:'Saúde',valor:-89.90,data:'01/12',emoji:'💪'},{nome:'Uber Eats',categoria:'Alimentação',valor:-67.80,data:'06/12',emoji:'🛵'},{nome:'Farmácia',categoria:'Saúde',valor:-67.30,data:'06/12',emoji:'💊'},{nome:'Rappi',categoria:'Alimentação',valor:-52.40,data:'07/12',emoji:'🛵'},{nome:'iFood',categoria:'Alimentação',valor:-45.90,data:'01/12',emoji:'🛵'},{nome:'iFood',categoria:'Alimentação',valor:-38.90,data:'05/12',emoji:'🛵'},{nome:'Uber',categoria:'Transporte',valor:-23.50,data:'02/12',emoji:'🚗'}],
+  insight_titulo:'Delivery consumiu o mesmo que saúde inteira em dezembro',
+  insight_detalhe:'R$ 204 em 12 pedidos. 4 pedidos às sextas. Cozinhar 3x/semana economizaria R$ 120/mês.',
+  projecao_atual:1167.20,projecao_mensal:2800,
+  diagnostico_titulo:'Você é um gastador emocional de fim de semana com disciplina em saúde.',
+  diagnostico_detalhe:'Sábado e domingo concentram 45% dos gastos em lazer e delivery. Após receber salário, gastos sobem 38% na primeira semana. Paradoxalmente, mantém consistência em academia e farmácia há 3 meses.',
+  alertas:[{tipo:'red',titulo:'Delivery vai custar R$ 880 este mês',texto:'No ritmo atual (R$ 204 em 7 dias), delivery representará 31% do total mensal projetado.'},{tipo:'amber',titulo:'Amazon sem categoria definida',texto:'R$ 234,50 sem classificação clara. Verifique se há assinaturas esquecidas ou compras por impulso.'},{tipo:'green',titulo:'Investimento em saúde consistente',texto:'Academia + farmácia presentes há 3 meses. Hábito consolidado que previne gastos maiores.'}],
+  padroes:[{tipo:'amber',titulo:'Gatilho pós-salário',detalhe:'Gastos sobem 38% na semana seguinte ao recebimento. Padrão psicológico de "recompensa" identificado.'},{tipo:'red',titulo:'Explosão de fim de semana',detalhe:'Sáb e Dom concentram 45% dos gastos em lazer e delivery. Padrão de consumo emocional.'},{tipo:'green',titulo:'Disciplina em saúde e bem-estar',detalhe:'Academia e farmácia presentes há 3 meses consecutivos. Único padrão positivo consistente.'}],
+  fixos:[{nome:'Netflix & Spotify',valor:-134.80,emoji:'📺'},{nome:'Academia',valor:-89.90,emoji:'💪'},{nome:'Seguro Auto',valor:-120.00,emoji:'🚗'}],
+  metas:[{nome:'Reduzir delivery em 30% (meta: R$ 143/mês)',pct:42,cor:'amber'},{nome:'Manter consistência por 30 dias',pct:26,cor:'blue'}],
+  rec_titulo:'3 ações para economizar R$ 340 este mês',
+  rec_detalhe:'Limitar delivery a 2x/semana (economia ~R$ 140) · Revisar assinatura Amazon/serviços (economia ~R$ 80) · Planejar compras online com lista de 48h de espera (economia ~R$ 120)',
+  dna_titulo:'O Gastador Emocional de Fim de Semana',
+  dna_desc:'Você é disciplinado durante a semana, mas fins de semana ativam gatilhos de consumo. Investe em saúde mas sabota com delivery. Receber salário dispara um ciclo de "recompensa" que compromete o mês.',
+  dna_traits:['💸 Gastador pós-salário','🍕 Viciado em delivery','💪 Disciplinado em saúde','🛍️ Comprador impulsivo online'],
+  preditivos:[{urgencia:'alta',titulo:'Delivery vai estourar em 5 dias',texto:'Com o padrão atual de R$ 29/dia em delivery, você chegará ao dobro do razoável antes do fim do mês.',dias:5,economia:'R$ 340'},{urgencia:'media',titulo:'Gasto de fim de semana se aproxima',texto:'Com base no seu histórico, sábado e domingo vão gerar R$ 280 em lazer e alimentação.',dias:3,economia:'R$ 140'},{urgencia:'baixa',titulo:'Renovação de assinaturas detectada',texto:'Netflix e Spotify vencem em breve. Momento ideal para revisar se ainda usa ambos.',dias:12,economia:'R$ 45'}]
+}}
 </script>
 </body>
 </html>
