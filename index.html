@@ -2285,6 +2285,7 @@ function resetExcelImport() {
 // PDF IMPORT — LOCAL PARSER (PDF.js, sem API, sem custo)
 // ═══════════════════════════════════════════════════════════════════════
 let pdfExtracted = [];
+let faturaVencimento = null; // "YYYY-MM-DD" — data contábil de todos os lançamentos da fatura
 
 // Lazy-load PDF.js from CDN
 function loadPdfJs() {
@@ -2405,18 +2406,20 @@ async function processPdfFile(file) {
     document.getElementById('pdf-raw-wrap').style.display = 'block';
 
     setPdfStatus(true, 'Identificando lançamentos BTG...');
-    const lancamentos = parseBtgFatura(fullText);
+    const parsed = parseBtgFatura(fullText);
 
     setPdfStatus(false);
 
-    if (!lancamentos.length) {
+    faturaVencimento = parsed.vencimento;
+
+    if (!parsed.lancamentos.length) {
       document.getElementById('pdf-not-found').style.display = 'block';
       toast('Nenhum lançamento identificado — veja o texto extraído', 'error');
       return;
     }
 
-    pdfExtracted = lancamentos;
-    showPdfPreview();
+    pdfExtracted = parsed.lancamentos;
+    showPdfPreview(parsed);
 
   } catch(err) {
     setPdfStatus(false);
@@ -2441,11 +2444,23 @@ function parseBtgFatura(text) {
   // Detecta ano e mês da fatura no cabeçalho
   let faturaAno = new Date().getFullYear();
   let faturaMes = new Date().getMonth() + 1;
+  let faturaVenc = null; // dia de vencimento
   const cabMatch = text.match(/fatura de (\w+) de (20\d{2})/i);
   if (cabMatch) {
     const mn = cabMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     faturaAno = parseInt(cabMatch[2]);
     faturaMes = MESES[mn] || MESES[mn.slice(0,3)] || faturaMes;
+  }
+  // Extrai dia de vencimento: "Vencimento: 11/05" ou "Vencimento 11/05"
+  const vencMatch = text.match(/vencimento[:\s]+(\d{1,2})\/(\d{1,2})/i);
+  if (vencMatch) {
+    const dia = vencMatch[1].padStart(2,'0');
+    const mes = vencMatch[2].padStart(2,'0');
+    // Monta data de vencimento com o ano da fatura
+    faturaVenc = `${faturaAno}-${mes}-${dia}`;
+  } else {
+    // Fallback: dia 10 do mês da fatura (padrão BTG)
+    faturaVenc = `${faturaAno}-${String(faturaMes).padStart(2,'0')}-10`;
   }
 
   // Blocos a ignorar por conteúdo
@@ -2528,11 +2543,12 @@ function parseBtgFatura(text) {
 
   // Deduplica por data+desc+valor
   const seen = new Set();
-  return results.filter(r => {
+  const lancamentos = results.filter(r => {
     const key = `${r.data}|${r.desc}|${r.valor}`;
     if (seen.has(key)) return false;
     seen.add(key); return true;
   });
+  return { lancamentos, vencimento: faturaVenc, mes: faturaMes, ano: faturaAno };
 }
 
 
@@ -2575,44 +2591,77 @@ function cleanDesc(str) {
 }
 
 // ── SHOW PREVIEW ───────────────────────────────────────────────────────
-function showPdfPreview() {
+function showPdfPreview(parsed) {
   document.getElementById('pdf-preview').style.display = 'block';
   const total = pdfExtracted.reduce((a, l) => a + l.valor, 0);
-  document.getElementById('pdf-preview-count').innerHTML =
-    `<span style="color:var(--purple)">🧾 ${pdfExtracted.length} lançamentos encontrados</span>
-     &nbsp;·&nbsp; Total: <span class="amt" style="font-family:var(--font-mono)">${fmtDec(total)}</span>`;
+  const vencFormatado = faturaVencimento
+    ? new Date(faturaVencimento + 'T12:00:00').toLocaleDateString('pt-BR')
+    : '—';
+  const ultimasParcelas = pdfExtracted.filter(l => isUltimaParcela(l.parcela)).length;
 
-  document.getElementById('pdf-preview-body').innerHTML = pdfExtracted.map((l, i) =>
-    `<tr>
-      <td class="muted">${l.data ? new Date(l.data+'T12:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-      <td>${l.desc}</td>
+  document.getElementById('pdf-preview-count').innerHTML =
+    `<span style="color:var(--purple)">🧾 ${pdfExtracted.length} lançamentos</span>
+     &nbsp;·&nbsp; Total: <span class="amt" style="font-family:var(--font-mono)">${fmtDec(total)}</span>
+     &nbsp;·&nbsp; <span class="tag tag-blue">📅 Venc. ${vencFormatado}</span>
+     ${ultimasParcelas ? `&nbsp;·&nbsp; <span class="tag tag-amber">⚠ ${ultimasParcelas} última(s) parcela(s)</span>` : ''}`;
+
+  document.getElementById('pdf-preview-body').innerHTML = pdfExtracted.map((l, i) => {
+    const ultima = isUltimaParcela(l.parcela);
+    const rowStyle = ultima ? 'background:rgba(245,158,11,.08);' : '';
+    const parcelaTag = l.parcela
+      ? `<span class="tag ${ultima ? 'tag-amber' : 'tag-purple'}">${l.parcela}${ultima ? ' 🏁' : ''}</span>`
+      : '—';
+    return `<tr style="${rowStyle}">
+      <td class="muted" style="font-size:.75rem">${l.data ? new Date(l.data+'T12:00:00').toLocaleDateString('pt-BR') : '—'}<br><span style="color:var(--blue2);font-size:.68rem">→ contábil: ${vencFormatado}</span></td>
+      <td>${l.desc}${ultima ? '<br><span style="font-size:.7rem;color:var(--amber)">⚠ Última parcela — não virá na próxima fatura</span>' : ''}</td>
       <td class="amt-neg">${fmtDec(l.valor)}</td>
-      <td class="muted">${l.parcela ? `<span class="tag tag-purple">${l.parcela}</span>` : '—'}</td>
-    </tr>`
-  ).join('');
+      <td>${parcelaTag}</td>
+    </tr>`;
+  }).join('');
+}
+
+function isUltimaParcela(parcela) {
+  if (!parcela) return false;
+  const m = parcela.match(/^(\d+)\/(\d+)$/);
+  return m && parseInt(m[1]) === parseInt(m[2]);
 }
 
 function confirmPdfImport() {
   if (!pdfExtracted.length) return;
   const db = getDB();
+  // Data contábil = vencimento da fatura (todos os lançamentos entram no mesmo mês)
+  const dataContabil = faturaVencimento || today();
+  const ultimasParcelas = [];
+
   pdfExtracted.forEach(l => {
+    const ultima = isUltimaParcela(l.parcela);
+    if (ultima) ultimasParcelas.push(l.desc);
     db.lancamentos.push({
       id: uid(),
-      data: l.data || today(),
+      data: dataContabil,           // ← mês contábil = vencimento da fatura
       desc: l.desc,
       cat: 'Outros',
-      subcat: l.parcela ? `Parcela ${l.parcela}` : '',
+      subcat: l.parcela ? `Parcela ${l.parcela}${ultima ? ' ✓ Última' : ''}` : '',
       tipo: 'Variável',
       forma: 'Cartão Crédito',
       cartao: 'BTG Pactual',
       valor: l.valor,
       natureza: 'Necessário',
-      obs: 'Importado via fatura BTG PDF',
+      obs: `Compra em ${l.data ? new Date(l.data+'T12:00:00').toLocaleDateString('pt-BR') : '?'} · Importado via fatura BTG PDF`,
     });
   });
+
   saveDB(db);
-  addImportLog({ tipo: 'pdf', desc: 'Fatura BTG Pactual', count: pdfExtracted.length });
-  toast(`✅ ${pdfExtracted.length} lançamentos importados!`);
+  addImportLog({ tipo: 'pdf', desc: `Fatura BTG — venc. ${dataContabil}`, count: pdfExtracted.length });
+  toast(`✅ ${pdfExtracted.length} lançamentos importados em ${new Date(dataContabil+'T12:00:00').toLocaleDateString('pt-BR', {month:'long', year:'numeric'})}!`);
+
+  // Alerta de últimas parcelas
+  if (ultimasParcelas.length) {
+    setTimeout(() => {
+      toast(`🏁 ${ultimasParcelas.length} parcelamento(s) quitado(s) nesta fatura: ${ultimasParcelas.slice(0,3).join(', ')}${ultimasParcelas.length>3?'...':''}`, 'success');
+    }, 800);
+  }
+
   resetPdfImport();
   renderLancamentos(); renderDashboard();
 }
