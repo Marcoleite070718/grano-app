@@ -968,7 +968,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
       <div class="card">
         <div class="card-header">
           <div class="card-title">📋 Histórico de Importações</div>
-          <button class="btn btn-sm btn-danger" onclick="clearImportLog()">Limpar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-danger" onclick="clearBtgLancamentos()">🗑 Apagar lançamentos BTG</button>
+            <button class="btn btn-sm btn-danger" onclick="clearImportLog()">Limpar log</button>
+          </div>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted2);padding:8px 0 4px">
+          ⚠ Use "Apagar lançamentos BTG" se precisar reimportar uma fatura — remove apenas os lançamentos importados via PDF.
         </div>
         <div id="import-log-list">
           <div class="empty-state"><div class="empty-icon">📋</div>Nenhuma importação realizada</div>
@@ -1697,7 +1703,10 @@ function buildFilterMes() {
   const keys = [...new Set(db.lancamentos.map(l=>monthKey(l.data)))].sort().reverse();
   if (!keys.includes(currentMonthKey)) keys.unshift(currentMonthKey);
   const sel = document.getElementById('filter-mes');
-  sel.innerHTML = keys.map(k=>`<option value="${k}" ${k===currentMonthKey?'selected':''}>${monthLabel(k)}</option>`).join('');
+  const currentVal = sel.value || currentMonthKey;
+  sel.innerHTML = keys.map(k=>`<option value="${k}" ${k===currentVal?'selected':''}>${monthLabel(k)}</option>`).join('');
+  // If previously selected month no longer exists, reset to current
+  if (!keys.includes(currentVal)) sel.value = currentMonthKey;
 }
 
 function renderLancamentos() {
@@ -2112,6 +2121,17 @@ function addImportLog(entry) {
 function clearImportLog() {
   localStorage.removeItem('financeos_importlog');
   renderImportLog();
+}
+function clearBtgLancamentos() {
+  const db = getDB();
+  const antes = db.lancamentos.length;
+  db.lancamentos = db.lancamentos.filter(l => !l.obs || !l.obs.includes('fatura BTG PDF'));
+  const removidos = antes - db.lancamentos.length;
+  if (!removidos) { toast('Nenhum lançamento BTG encontrado', 'error'); return; }
+  saveDB(db);
+  toast(`🗑 ${removidos} lançamento(s) BTG removidos — pode reimportar agora`);
+  renderDashboard();
+  renderLancamentos();
 }
 function renderImportLog() {
   const log = getImportLog();
