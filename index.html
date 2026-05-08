@@ -792,7 +792,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
         <div class="card-header"><div class="card-title">Tabela de Cenários</div></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Mês</th><th>Pessimista</th><th>Realista</th><th>Otimista</th><th>Meta</th><th>Acumulado (Realista)</th></tr></thead>
+            <thead><tr><th>Mês</th><th>Fixas</th><th>Parcelas</th><th>Total Comprometido</th><th>% Renda</th><th>Saldo Estimado</th></tr></thead>
             <tbody id="table-projecao"></tbody>
           </table>
         </div>
@@ -1877,37 +1877,75 @@ function renderMetas() {
   const saldo = receita - variaveis - fixasTotal;
   const patrimTotal = db.ativos.reduce((a,x)=>a+x.valor,0);
   const reserva = db.ativos.filter(a=>a.cat==='Reserva').reduce((a,x)=>a+x.valor,0);
+  const lazer = db.lancamentos.filter(l=>l.cat==='Lazer'&&monthKey(l.data)===currentMonthKey).reduce((a,l)=>a+l.valor,0);
+  const impulsivos = db.lancamentos.filter(l=>l.natureza==='Impulsivo'&&monthKey(l.data)===currentMonthKey).reduce((a,l)=>a+l.valor,0);
 
+  // Cada meta tem: name, meta, real, cor, desc, tipo
+  // tipo: 'poupar' = quanto maior melhor | 'teto' = não pode ultrapassar
   const metas = [
-    { name:'💰 Economia Mensal', meta: cfg.metaPoupanca, real: saldo, cor: 'var(--green)', desc:'Receita − fixos − variáveis' },
-    { name:'📊 Teto de Gastos Variáveis', meta: cfg.metaGastosVariaveis, real: variaveis, cor: 'var(--blue2)', desc:'Limite mensal de gastos', reverso:true },
-    { name:'🎉 Teto de Lazer', meta: cfg.metaGastosVariaveis * cfg.tetoLazerPct, real: db.lancamentos.filter(l=>l.cat==='Lazer'&&monthKey(l.data)===currentMonthKey).reduce((a,l)=>a+l.valor,0), cor:'var(--purple)', desc:'% da renda em lazer', reverso:true },
-    { name:'🏦 Reserva de Emergência', meta: cfg.metaReserva, real: reserva, cor: 'var(--cyan)', desc:`Meta: ${fmt(cfg.metaReserva)}` },
-    { name:'📈 Meta Patrimonial Anual', meta: cfg.metaPatrimonialAnual, real: patrimTotal, cor: 'var(--amber)', desc:'Patrimônio total acumulado' },
-    { name:'⚡ Gastos Impulsivos', meta: 300, real: db.lancamentos.filter(l=>l.natureza==='Impulsivo'&&monthKey(l.data)===currentMonthKey).reduce((a,l)=>a+l.valor,0), cor:'var(--red)', desc:'Limite de gastos impulsivos', reverso:true },
+    { name:'💰 Economia Mensal',        meta: cfg.metaPoupanca,          real: saldo,      cor:'var(--green)',  tipo:'poupar', desc:'Receita − fixos − variáveis' },
+    { name:'📊 Teto de Gastos Variáveis',meta: cfg.metaGastosVariaveis,   real: variaveis,  cor:'var(--blue2)', tipo:'teto',   desc:'Limite de gastos no cartão/débito' },
+    { name:'🎉 Teto de Lazer',          meta: cfg.metaGastosVariaveis * cfg.tetoLazerPct, real: lazer, cor:'var(--purple)', tipo:'teto', desc:'Máximo em lazer por mês' },
+    { name:'🏦 Reserva de Emergência',   meta: cfg.metaReserva,           real: reserva,    cor:'var(--cyan)',  tipo:'poupar', desc:`Meta: ${fmt(cfg.metaReserva)}` },
+    { name:'📈 Meta Patrimonial Anual',  meta: cfg.metaPatrimonialAnual,  real: patrimTotal, cor:'var(--amber)', tipo:'poupar', desc:'Patrimônio total acumulado' },
+    { name:'⚡ Gastos Impulsivos',       meta: 300,                       real: impulsivos, cor:'var(--red)',   tipo:'teto',   desc:'Limite de compras por impulso' },
   ];
 
   document.getElementById('metas-grid').innerHTML = metas.map(m => {
-    const pct = Math.min(m.real / Math.max(m.meta,1), 1.5);
-    const ok = m.reverso ? pct <= 1 : pct >= 1;
-    const status = ok ? '✅ ATINGIDA' : pct >= (m.reverso ? 0.8 : 0.7) ? '🟡 PERTO' : m.reverso ? '🟢 OK' : '🔴 ABAIXO';
+    const pct = m.real / Math.max(m.meta, 1);
     const barPct = Math.min(pct, 1) * 100;
+    const excedeu = pct > 1;
     const diff = m.real - m.meta;
-    return `<div class="card">
+
+    // Status e cor dependem do tipo
+    let statusLabel, statusClass, barFrom, barTo, valorCor;
+    if (m.tipo === 'teto') {
+      if (excedeu) {
+        statusLabel = '🔴 ESTOURADO';  statusClass = 'tag-red';
+        barFrom = '#ef4444'; barTo = '#f59e0b'; valorCor = 'var(--red)';
+      } else if (pct >= 0.85) {
+        statusLabel = '🟡 ATENÇÃO';    statusClass = 'tag-amber';
+        barFrom = '#f59e0b'; barTo = '#fbbf24'; valorCor = 'var(--amber)';
+      } else {
+        statusLabel = '🟢 OK';          statusClass = 'tag-green';
+        barFrom = m.cor; barTo = m.cor+'aa'; valorCor = m.cor;
+      }
+    } else { // poupar
+      if (pct >= 1) {
+        statusLabel = '✅ ATINGIDA';   statusClass = 'tag-green';
+        barFrom = '#10b981'; barTo = '#06b6d4'; valorCor = 'var(--green)';
+      } else if (pct >= 0.7) {
+        statusLabel = '🟡 PERTO';      statusClass = 'tag-amber';
+        barFrom = '#f59e0b'; barTo = '#fbbf24'; valorCor = 'var(--amber)';
+      } else {
+        statusLabel = '🔴 ABAIXO';     statusClass = 'tag-red';
+        barFrom = '#ef4444'; barTo = '#dc2626'; valorCor = 'var(--red)';
+      }
+    }
+
+    // Excedido: barra vermelha cheia + indicador de estouro
+    const extraBar = excedeu && m.tipo === 'teto'
+      ? `<div style="margin-top:4px;font-size:.72rem;color:var(--red);font-family:var(--font-mono)">+${fmt(diff)} acima do limite (${(pct*100).toFixed(0)}%)</div>`
+      : '';
+
+    return `<div class="card" style="${excedeu && m.tipo==='teto' ? 'border-color:rgba(239,68,68,.4);' : ''}">
       <div class="card-header">
         <div class="card-title">${m.name}</div>
-        <span class="tag ${ok?'tag-green':pct>=(m.reverso?0.8:0.7)?'tag-amber':'tag-red'}">${status}</span>
+        <span class="tag ${statusClass}">${statusLabel}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px">
         <span style="font-size:.8rem;color:var(--muted2)">${m.desc}</span>
         <span style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted2)">Meta: ${fmt(m.meta)}</span>
       </div>
-      <div style="font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:${m.cor};margin-bottom:10px">${fmt(m.real)}</div>
+      <div style="font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:${valorCor};margin-bottom:10px">${fmt(m.real)}</div>
       <div class="progress-label">
-        <span style="font-size:.72rem">${fmtPct(pct)} da meta</span>
+        <span style="font-size:.72rem">${(pct*100).toFixed(1)}% da meta</span>
         <span class="${diff>=0?'amt-pos':'amt-neg'}" style="font-size:.72rem;font-family:var(--font-mono)">${diff>=0?'+':''}${fmt(diff)}</span>
       </div>
-      <div class="progress-bar-bg"><div class="progress-bar" style="width:${barPct}%;--bar-from:${m.cor};--bar-to:${m.cor}aa"></div></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar" style="width:${barPct}%;--bar-from:${barFrom};--bar-to:${barTo}"></div>
+      </div>
+      ${extraBar}
     </div>`;
   }).join('');
 }
@@ -1917,37 +1955,110 @@ function renderMetas() {
 ═══════════════════════════════════════════════════════════════════════ */
 function renderProjecoes() {
   const db = getDB(); const cfg = db.config;
-  const poupancaMensal = cfg.metaPoupanca;
-  document.getElementById('proj-pess').textContent = fmt(poupancaMensal * 0.5);
-  document.getElementById('proj-real').textContent = fmt(poupancaMensal * 1.0);
-  document.getElementById('proj-otim').textContent = fmt(poupancaMensal * 1.3);
+  const fixasTotal = calcFixasTotal(db);
 
-  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  let acum = 0;
-  const rows = months.map((m,i) => {
-    const pess = poupancaMensal * 0.5;
-    const real = poupancaMensal;
-    const otim = poupancaMensal * 1.3;
-    acum += real;
-    return { m, pess, real, otim, meta: poupancaMensal, acum };
-  });
+  // Calcula comprometimento futuro de parcelamentos por mês
+  // Cada parcelamento tem: total, num, pagas, inicio (YYYY-MM-DD)
+  function parcelasNoMes(mk) {
+    return db.parcelamentos.reduce((soma, p) => {
+      if (!p.num || !p.total) return soma;
+      const parcela = p.total / p.num;
+      const inicio = p.inicio || today();
+      const [iy, im] = inicio.split('-').map(Number);
+      const [my, mm] = mk.split('-').map(Number);
+      // Número do mês relativo ao início
+      const mesesDesdeInicio = (my - iy) * 12 + (mm - im);
+      const parcelaNum = mesesDesdeInicio + 1; // 1-indexed
+      if (parcelaNum > 0 && parcelaNum <= p.num && parcelaNum > (p.pagas || 0)) {
+        soma += parcela;
+      }
+      return soma;
+    }, 0);
+  }
 
-  makeLineChart('chart-projecao', months, [
-    { label:'Pessimista', data: rows.map(r=>r.acum*0.5), borderColor:'#ef4444', tension:.4, borderDash:[5,5] },
-    { label:'Realista',   data: rows.map(r=>r.acum),     borderColor:'#3b82f6', tension:.4, fill:false },
-    { label:'Otimista',   data: rows.map(r=>r.acum*1.3), borderColor:'#10b981', tension:.4 },
-  ]);
+  // Lançamentos parcelados importados do PDF: detecta pelo subcat "Parcela X/Y"
+  // Agrupa por descrição e calcula parcelas restantes
+  function parcelasImportadasNoMes(mk) {
+    // Para cada lançamento com subcat "Parcela X/Y", calcula se haverá cobrança naquele mês
+    // Simplificado: parcelas futuras = parcelas da fatura atual × meses restantes
+    const parcelados = db.lancamentos.filter(l =>
+      l.subcat && l.subcat.startsWith('Parcela') && l.subcat.match(/\d+\/\d+/)
+    );
+    const grupos = {};
+    parcelados.forEach(l => {
+      const m2 = l.subcat.match(/(\d+)\/(\d+)/);
+      if (!m2) return;
+      const atual = parseInt(m2[1]), total = parseInt(m2[2]);
+      const chave = l.desc;
+      if (!grupos[chave] || grupos[chave].atual < atual) {
+        grupos[chave] = { desc: l.desc, valor: l.valor, atual, total, dataFatura: l.data };
+      }
+    });
 
-  document.getElementById('table-projecao').innerHTML = rows.map(r=>`
-    <tr>
-      <td>${r.m}</td>
-      <td class="amt-neg">${fmt(r.pess)}</td>
-      <td class="amt">${fmt(r.real)}</td>
-      <td class="amt-pos">${fmt(r.otim)}</td>
-      <td class="muted">${fmt(r.meta)}</td>
-      <td style="font-family:var(--font-mono);color:var(--blue2);font-weight:700">${fmt(r.acum)}</td>
-    </tr>`).join('');
+    return Object.values(grupos).reduce((soma, g) => {
+      const [fy, fm] = (g.dataFatura || today()).split('-').map(Number);
+      const [my, mm] = mk.split('-').map(Number);
+      const mesesAFrente = (my - fy) * 12 + (mm - fm);
+      const parcelaFutura = g.atual + mesesAFrente;
+      if (mesesAFrente >= 0 && parcelaFutura <= g.total) soma += g.valor;
+      return soma;
+    }, 0);
+  }
+
+  // Gera próximos 6 meses a partir do mês atual
+  const mesesFuturos = [];
+  for (let i = 0; i <= 5; i++) {
+    const d = new Date(todayDate.getFullYear(), todayDate.getMonth() + i, 1);
+    const mk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleDateString('pt-BR', {month:'short', year:'2-digit'}).replace('. ','/'). replace('.','');
+    const parcManuais = parcelasNoMes(mk);
+    const parcPdf = parcelasImportadasNoMes(mk);
+    const totalParcelas = parcManuais + parcPdf;
+    const totalMes = fixasTotal + totalParcelas;
+    mesesFuturos.push({ mk, label, fixas: fixasTotal, parcelas: totalParcelas, total: totalMes, isAtual: i === 0 });
+  }
+
+  const maxTotal = Math.max(...mesesFuturos.map(m => m.total), 1);
+
+  // KPIs de cenário (baseados no mês atual real)
+  const receitaAtual = calcReceita(db);
+  const varAtual = calcVariaveis(db);
+  const saldoAtual = receitaAtual - fixasTotal - varAtual;
+  document.getElementById('proj-pess').textContent = fmt(saldoAtual * 0.5);
+  document.getElementById('proj-real').textContent = fmt(saldoAtual);
+  document.getElementById('proj-otim').textContent = fmt(saldoAtual * 1.3);
+
+  // Tabela de comprometimento futuro
+  document.getElementById('table-projecao').innerHTML = mesesFuturos.map(m => {
+    const pct = m.total / Math.max(receitaAtual, 1);
+    const pctBar = Math.min(pct, 1) * 100;
+    const cor = pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#10b981';
+    const saldo = receitaAtual - m.total;
+    return `<tr ${m.isAtual ? 'style="background:rgba(37,99,235,.08)"' : ''}>
+      <td><strong>${m.label}</strong>${m.isAtual ? ' <span class="tag tag-blue" style="font-size:.65rem">atual</span>' : ''}</td>
+      <td class="amt">${fmt(m.fixas)}</td>
+      <td class="amt" style="color:var(--purple)">${fmt(m.parcelas)}</td>
+      <td class="amt" style="color:${cor};font-weight:700">${fmt(m.total)}</td>
+      <td>
+        <div class="progress-bar-bg" style="width:100px">
+          <div class="progress-bar" style="width:${pctBar}%;--bar-from:${cor};--bar-to:${cor}"></div>
+        </div>
+      </td>
+      <td class="${saldo>=0?'amt-pos':'amt-neg'}">${fmt(saldo)}</td>
+    </tr>`;
+  }).join('');
+
+  // Gráfico: comprometimento por mês
+  makeBarChart('chart-projecao',
+    mesesFuturos.map(m => m.label),
+    mesesFuturos.map(m => m.total),
+    mesesFuturos.map(m => {
+      const pct = m.total / Math.max(receitaAtual, 1);
+      return pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#3b82f6';
+    })
+  );
 }
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    PATRIMÔNIO RENDER
