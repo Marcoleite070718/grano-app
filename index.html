@@ -2328,23 +2328,76 @@ async function processPdfFile(file) {
     let fullText = '';
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
+      const viewport = page.getViewport({ scale: 1 });
+      const pageWidth = viewport.width;
       const content = await page.getTextContent();
-      // Sort items by Y position (top to bottom) then X (left to right)
-      const items = content.items.slice().sort((a, b) => {
-        const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
-        return dy !== 0 ? dy : a.transform[4] - b.transform[4];
+
+      // BTG fatura has a two-column layout for transactions.
+      // Strategy: split items into LEFT and RIGHT columns by X midpoint,
+      // build each column's lines independently, then concatenate top-to-bottom.
+      const midX = pageWidth * 0.50; // 50% divider — BTG columns are roughly equal
+
+      // Separate items into two columns
+      const leftItems  = content.items.filter(i => i.transform[4] < midX);
+      const rightItems = content.items.filter(i => i.transform[4] >= midX);
+
+      function itemsToLines(items) {
+        // Sort by Y descending (top of page first), then X ascending
+        const sorted = items.slice().sort((a, b) => {
+          const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
+          return dy !== 0 ? dy : a.transform[4] - b.transform[4];
+        });
+        const lines = []; let lastY = null; let curLine = [];
+        sorted.forEach(item => {
+          const str = item.str.trim();
+          if (!str) return;
+          const y = Math.round(item.transform[5]);
+          if (lastY === null || Math.abs(y - lastY) > 4) {
+            if (curLine.length) lines.push(curLine.join(' '));
+            curLine = [str]; lastY = y;
+          } else {
+            curLine.push(str);
+          }
+        });
+        if (curLine.length) lines.push(curLine.join(' '));
+        return lines;
+      }
+
+      // Build Y-indexed map so we can interleave columns in reading order
+      function itemsToLineMap(items) {
+        const map = new Map();
+        const sorted = items.slice().sort((a, b) => {
+          const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
+          return dy !== 0 ? dy : a.transform[4] - b.transform[4];
+        });
+        sorted.forEach(item => {
+          const str = item.str.trim();
+          if (!str) return;
+          const y = Math.round(item.transform[5]);
+          // Snap Y to nearest 4px bucket to merge near-identical rows
+          const yKey = Math.round(y / 4) * 4;
+          if (!map.has(yKey)) map.set(yKey, []);
+          map.get(yKey).push(str);
+        });
+        return map;
+      }
+
+      const leftMap  = itemsToLineMap(leftItems);
+      const rightMap = itemsToLineMap(rightItems);
+
+      // Collect all Y keys, sorted descending (top first)
+      const allYs = [...new Set([...leftMap.keys(), ...rightMap.keys()])].sort((a,b) => b - a);
+
+      const pageLines = [];
+      allYs.forEach(y => {
+        const left  = leftMap.get(y);
+        const right = rightMap.get(y);
+        // Each column row becomes its own line — never merged together
+        if (left  && left.length)  pageLines.push(left.join(' '));
+        if (right && right.length) pageLines.push(right.join(' '));
       });
-      // Group into lines by Y coordinate proximity
-      let lines = []; let lastY = null; let curLine = [];
-      items.forEach(item => {
-        const y = Math.round(item.transform[5]);
-        if (lastY === null || Math.abs(y - lastY) > 3) {
-          if (curLine.length) lines.push(curLine.map(i => i.str).join(' '));
-          curLine = [item]; lastY = y;
-        } else { curLine.push(item); }
-      });
-      if (curLine.length) lines.push(curLine.map(i => i.str).join(' '));
-      fullText += lines.join('\n') + '\n';
+
+      fullText += pageLines.join('\n') + '\n';
     }
 
     // Show raw text for debug
